@@ -5,9 +5,10 @@ import java.math.BigDecimal;
 
 @Entity
 public class MenuItem {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer itemId;
+    private Integer id;
 
     private String name;
 
@@ -21,12 +22,12 @@ public class MenuItem {
     public MenuItem() {}
 
     // Getters & Setters
-    public Integer getItemId() {
-        return itemId;
+    public Integer getId() {
+        return id;
     }
 
-    public void setItemId(Integer itemId) {
-        this.itemId = itemId;
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getName() {

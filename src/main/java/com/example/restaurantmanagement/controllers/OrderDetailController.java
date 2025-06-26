@@ -2,8 +2,9 @@ package com.example.restaurantmanagement.controllers;
 
 import com.example.restaurantmanagement.model.OrderDetail;
 import com.example.restaurantmanagement.model.OrderDetail.OrderDetailId;
+import com.example.restaurantmanagement.response.ResponseObject;
 import com.example.restaurantmanagement.service.OrderDetailService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,39 +17,69 @@ public class OrderDetailController {
 
     private final OrderDetailService orderDetailService;
 
-    @Autowired
     public OrderDetailController(OrderDetailService orderDetailService) {
         this.orderDetailService = orderDetailService;
     }
 
     // ✅ CREATE
-    @PostMapping
-    public ResponseEntity<OrderDetail> createOrderDetail(@RequestBody OrderDetail detail) {
-        return ResponseEntity.ok(orderDetailService.saveOrderDetail(detail)); // ✅ tên đúng
+    @PostMapping("/create")
+    public ResponseEntity<ResponseObject> createOrderDetail(@RequestBody OrderDetail detail) {
+        try {
+            OrderDetail created = orderDetailService.createOrderDetail(detail);
+            return ResponseEntity.ok(new ResponseObject(created));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ResponseObject("CREATE_FAILED", e.getMessage()));
+        }
     }
 
-    // ✅ GET ALL
+    // ✅ READ ALL
     @GetMapping
-    public ResponseEntity<List<OrderDetail>> getAll() {
-        return ResponseEntity.ok(orderDetailService.getAllOrderDetails()); // ✅ tên đúng
+    public ResponseEntity<ResponseObject> getAllOrderDetails() {
+        List<OrderDetail> details = orderDetailService.getAllOrderDetails();
+        return ResponseEntity.ok(new ResponseObject(details));
     }
 
-    // ✅ GET BY ORDER ID
+    // ✅ READ BY ORDER ID
     @GetMapping("/order/{orderId}")
-    public ResponseEntity<List<OrderDetail>> getByOrderId(@PathVariable Integer orderId) {
-        List<OrderDetail> details = orderDetailService.getOrderDetailsByOrderId(orderId); // ✅ đúng method
-        return ResponseEntity.ok(details);
+    public ResponseEntity<ResponseObject> getDetailsByOrderId(@PathVariable Integer orderId) {
+        List<OrderDetail> details = orderDetailService.getOrderDetailsByOrderId(orderId);
+        return ResponseEntity.ok(new ResponseObject(details));
+    }
+
+    // ✅ READ BY COMPOSITE KEY (dễ tìm kiếm hơn)
+    @GetMapping("/find")
+    public ResponseEntity<ResponseObject> getDetailById(@RequestParam Integer orderId, @RequestParam Integer itemId) {
+        OrderDetailId id = new OrderDetailId(orderId, itemId);
+        Optional<OrderDetail> detail = orderDetailService.getOrderDetailById(id);
+        return detail.map(value -> ResponseEntity.ok(new ResponseObject(value)))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject("NOT_FOUND", "Order detail not found")));
+    }
+
+    // ✅ UPDATE
+    @PostMapping("/update")
+    public ResponseEntity<ResponseObject> updateOrderDetail(@RequestBody OrderDetail detail) {
+        try {
+            OrderDetail updated = orderDetailService.updateOrderDetail(detail);
+            return ResponseEntity.ok(new ResponseObject(updated));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(new ResponseObject("UPDATE_FAILED", e.getMessage()));
+        }
     }
 
     // ✅ DELETE BY COMPOSITE KEY
-    @DeleteMapping("/order/{orderId}")
-    public ResponseEntity<String> delete(@PathVariable Integer orderId, @PathVariable Integer itemId) {
+    @PostMapping("/delete")
+    public ResponseEntity<ResponseObject> deleteOrderDetail(@RequestParam Integer orderId,
+                                                            @RequestParam Integer itemId) {
         OrderDetailId id = new OrderDetailId(orderId, itemId);
-        Optional<OrderDetail> detail = orderDetailService.getOrderDetailById(id); // ✅ đúng method
+        Optional<OrderDetail> detail = orderDetailService.getOrderDetailById(id);
         if (detail.isPresent()) {
             orderDetailService.deleteOrderDetail(id);
-            return ResponseEntity.ok("Deleted successfully.");
+            return ResponseEntity.ok(new ResponseObject("SUCCESS", "Order detail deleted successfully"));
         }
-        return ResponseEntity.status(404).body("Order detail not found.");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ResponseObject("NOT_FOUND", "Order detail not found"));
     }
 }

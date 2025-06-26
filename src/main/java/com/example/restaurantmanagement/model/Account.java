@@ -6,27 +6,19 @@ import jakarta.persistence.*;
 public class Account {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer accountId;
+    private Long accountId;
 
     private String username;
 
     private String password;
 
     private String role;
-
-    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL)
-    private Customer customer;
-    @OneToOne(mappedBy = "account", cascade = CascadeType.ALL)
-    private Staff staff;
-
     public Account() {}
-
-    // Getters and Setters
-    public Integer getAccountId() {
+    public Long getAccountId() {
         return accountId;
     }
 
-    public void setAccountId(Integer accountId) {
+    public void setAccountId(Long accountId) {
         this.accountId = accountId;
     }
 

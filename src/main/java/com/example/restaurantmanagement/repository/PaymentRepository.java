@@ -7,6 +7,6 @@ import org.springframework.data.repository.query.Param;
 
 public interface PaymentRepository extends JpaRepository<Payment, Integer> {
 
-    @Query("SELECT p FROM Payment p WHERE p.order.orderId = :orderId")
+    @Query("SELECT p FROM Payment p WHERE p.order.id = :orderId")
     Payment getPaymentByOrderId(@Param("orderId") Integer orderId);
 }

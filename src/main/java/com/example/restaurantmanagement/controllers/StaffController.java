@@ -1,11 +1,10 @@
 package com.example.restaurantmanagement.controllers;
 
-import com.example.restaurantmanagement.model.Account;
 import com.example.restaurantmanagement.model.Staff;
 import com.example.restaurantmanagement.repository.AccountRepository;
-import com.example.restaurantmanagement.repository.StaffRepository;
+import com.example.restaurantmanagement.response.ResponseObject;
 import com.example.restaurantmanagement.service.StaffService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,69 +17,74 @@ public class StaffController {
 
     private final StaffService staffService;
     private final AccountRepository accountRepository;
-    private final StaffRepository staffRepository;
 
-    @Autowired
-    public StaffController(StaffService staffService, AccountRepository accountRepository, StaffRepository staffRepository) {
+    public StaffController(StaffService staffService, AccountRepository accountRepository) {
         this.staffService = staffService;
         this.accountRepository = accountRepository;
-        this.staffRepository = staffRepository;
     }
 
     // ✅ CREATE
-    @PostMapping
-    public ResponseEntity<?> createStaff(@RequestBody Staff staff) {
-        Integer accId = staff.getAccount().getAccountId();
+    @PostMapping("/create")
+    public ResponseEntity<ResponseObject> createStaff(@RequestBody Staff staff) {
+        try {
+            if (staff.getAccountId() == null) {
+                return ResponseEntity.badRequest()
+                        .body(new ResponseObject("VALIDATION_FAILED", "Account ID must not be null"));
+            }
 
-        Account account = accountRepository.findById(accId)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+            if (!accountRepository.existsById(staff.getAccountId())) {
+                return ResponseEntity.badRequest()
+                        .body(new ResponseObject("NOT_FOUND", "Account not found with ID = " + staff.getAccountId()));
+            }
 
-        staff.setAccount(account); // Quan trọng
-        Staff savedStaff = staffRepository.save(staff);
-
-        return ResponseEntity.ok(savedStaff);
+            Staff created = staffService.createStaff(staff);
+            return ResponseEntity.ok(new ResponseObject(created));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ResponseObject("CREATE_FAILED", e.getMessage()));
+        }
     }
 
-    // ✅ READ ONE
+    // ✅ READ by ID
     @GetMapping("/{id}")
-    public ResponseEntity<?> getStaff(@PathVariable Integer id) {
+    public ResponseEntity<ResponseObject> getStaff(@PathVariable Integer id) {
         Optional<Staff> staff = staffService.getStaffById(id);
-        return staff.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return staff.map(value -> ResponseEntity.ok(new ResponseObject(value)))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject("NOT_FOUND", "Staff not found")));
     }
 
     // ✅ READ ALL
     @GetMapping
-    public ResponseEntity<List<Staff>> getAllStaff() {
-        return ResponseEntity.ok(staffService.getAllStaff());
+    public ResponseEntity<ResponseObject> getAllStaff() {
+        List<Staff> staffList = staffService.getAllStaff();
+        return ResponseEntity.ok(new ResponseObject(staffList));
     }
 
     // ✅ UPDATE
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateStaff(@PathVariable Integer id, @RequestBody Staff updatedStaff) {
-        Optional<Staff> optional = staffService.getStaffById(id);
-        if (optional.isPresent()) {
-            Staff staff = optional.get();
-            staff.setName(updatedStaff.getName());
-            staff.setPhone(updatedStaff.getPhone());
-            staff.setPosition(updatedStaff.getPosition());
-            staff.setAddress(updatedStaff.getAddress());
-            staff.setDateOfBirth(updatedStaff.getDateOfBirth());
-            return ResponseEntity.ok(staffService.saveStaff(staff));
-        } else {
-            return ResponseEntity.notFound().build();
+    @PostMapping("/update/{id}")
+    public ResponseEntity<ResponseObject> updateStaff(@PathVariable Integer id,
+                                                      @RequestBody Staff staff) {
+        try {
+            staff.setId(id); // đảm bảo ID từ path truyền vào object
+            Staff updated = staffService.updateStaff(staff);
+            return ResponseEntity.ok(new ResponseObject(updated));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest()
+                    .body(new ResponseObject("UPDATE_FAILED", ex.getMessage()));
         }
     }
 
     // ✅ DELETE
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteStaff(@PathVariable Integer id) {
-        Optional<Staff> optional = staffService.getStaffById(id);
-        if (optional.isPresent()) {
+    @PostMapping("/delete/{id}")
+    public ResponseEntity<ResponseObject> deleteStaff(@PathVariable Integer id) {
+        Optional<Staff> existing = staffService.getStaffById(id);
+        if (existing.isPresent()) {
             staffService.deleteStaff(id);
-            return ResponseEntity.ok("Staff deleted successfully.");
+            return ResponseEntity.ok(new ResponseObject("SUCCESS", "Staff deleted successfully"));
         } else {
-            return ResponseEntity.status(404).body("Staff not found.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ResponseObject("NOT_FOUND", "Staff not found"));
         }
     }
 }

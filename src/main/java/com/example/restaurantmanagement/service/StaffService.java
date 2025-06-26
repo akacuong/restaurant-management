@@ -7,11 +7,18 @@ import java.util.Optional;
 
 public interface StaffService {
 
-    Staff saveStaff(Staff staff);
+    // ✅ CREATE
+    Staff createStaff(Staff staff);
 
+    // ✅ UPDATE
+    Staff updateStaff(Staff staff);
+
+    // ✅ READ ONE
     Optional<Staff> getStaffById(Integer id);
 
+    // ✅ READ ALL
     List<Staff> getAllStaff();
 
+    // ✅ DELETE
     void deleteStaff(Integer id);
 }

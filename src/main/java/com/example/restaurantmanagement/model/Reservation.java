@@ -10,14 +10,21 @@ public class Reservation {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer reservationId;
+    private Integer id;
 
     @ManyToOne
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
+
     @OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TableInfo> tableInfos = new ArrayList<>();
-    private LocalDateTime time;
+
+    // ✅ Thêm startTime và endTime
+    @Column(name = "start_time", nullable = false)
+    private LocalDateTime startTime;
+
+    @Column(name = "end_time", nullable = false)
+    private LocalDateTime endTime;
 
     private String note;
 
@@ -27,14 +34,30 @@ public class Reservation {
 
     public Reservation() {}
 
-    // Getters and Setters
-
-    public Integer getReservationId() {
-        return reservationId;
+    // ✅ Getter/Setter cho startTime và endTime
+    public LocalDateTime getStartTime() {
+        return startTime;
     }
 
-    public void setReservationId(Integer reservationId) {
-        this.reservationId = reservationId;
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public LocalDateTime getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(LocalDateTime endTime) {
+        this.endTime = endTime;
+    }
+
+    // Các Getter/Setter còn lại
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public Customer getCustomer() {
@@ -43,14 +66,6 @@ public class Reservation {
 
     public void setCustomer(Customer customer) {
         this.customer = customer;
-    }
-
-    public LocalDateTime getTime() {
-        return time;
-    }
-
-    public void setTime(LocalDateTime time) {
-        this.time = time;
     }
 
     public String getNote() {
@@ -76,6 +91,7 @@ public class Reservation {
     public void setStatus(String status) {
         this.status = status;
     }
+
     public List<TableInfo> getTableInfos() {
         return tableInfos;
     }

@@ -1,12 +1,14 @@
 package com.example.restaurantmanagement.controllers;
 
 import com.example.restaurantmanagement.model.Payment;
+import com.example.restaurantmanagement.response.ResponseObject;
 import com.example.restaurantmanagement.service.PaymentService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -14,38 +16,46 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
-    @Autowired
     public PaymentController(PaymentService paymentService) {
         this.paymentService = paymentService;
     }
-    // 1. Thêm thanh toán
-    @PostMapping
-    public ResponseEntity<Payment> createPayment(@RequestBody Payment payment) {
-        Payment saved = paymentService.savePayment(payment);
-        return ResponseEntity.ok(saved);
-    }
 
-    // 2. Lấy thanh toán theo orderId
-    @GetMapping("/order/{orderId}")
-    public ResponseEntity<Payment> getPaymentByOrderId(@PathVariable Integer orderId) {
-        Payment payment = paymentService.getPaymentByOrderId(orderId);
-        if (payment != null) {
-            return ResponseEntity.ok(payment);
-        } else {
-            return ResponseEntity.notFound().build();
+    // ✅ CREATE
+    @PostMapping("/create")
+    public ResponseEntity<ResponseObject> createPayment(@RequestBody Payment payment) {
+        try {
+            Payment saved = paymentService.createPayment(payment);
+            return ResponseEntity.ok(new ResponseObject(saved));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(new ResponseObject("CREATE_FAILED", ex.getMessage()));
         }
     }
 
-    // 3. Lấy danh sách tất cả thanh toán
-    @GetMapping
-    public ResponseEntity<List<Payment>> getAllPayments() {
-        return ResponseEntity.ok(paymentService.getAllPayments());
+    // ✅ READ BY ORDER ID
+    @GetMapping("/order/{orderId}")
+    public ResponseEntity<ResponseObject> getPaymentByOrderId(@PathVariable Integer orderId) {
+        Optional<Payment> payment = paymentService.getPaymentByOrderId(orderId);
+        return payment.map(value -> ResponseEntity.ok(new ResponseObject(value)))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject("NOT_FOUND", "Payment not found for Order ID: " + orderId)));
     }
 
-    // 4. Xóa thanh toán theo paymentId
-    @DeleteMapping("/{paymentId}")
-    public ResponseEntity<Void> deletePayment(@PathVariable Integer paymentId) {
-        paymentService.deletePayment(paymentId);
-        return ResponseEntity.noContent().build();
+    // ✅ READ ALL
+    @GetMapping
+    public ResponseEntity<ResponseObject> getAllPayments() {
+        List<Payment> payments = paymentService.getAllPayments();
+        return ResponseEntity.ok(new ResponseObject(payments));
+    }
+
+    // ✅ DELETE
+    @PostMapping("/delete/{id}")
+    public ResponseEntity<ResponseObject> deletePayment(@PathVariable Integer id) {
+        try {
+            paymentService.deletePayment(id);
+            return ResponseEntity.ok(new ResponseObject("SUCCESS", "Payment deleted successfully"));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ResponseObject("NOT_FOUND", ex.getMessage()));
+        }
     }
 }

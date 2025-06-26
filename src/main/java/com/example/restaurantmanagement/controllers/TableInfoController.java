@@ -1,14 +1,18 @@
 package com.example.restaurantmanagement.controllers;
 
-import com.example.restaurantmanagement.model.TableInfo;
 import com.example.restaurantmanagement.model.Reservation;
+import com.example.restaurantmanagement.model.TableInfo;
+import com.example.restaurantmanagement.response.ResponseObject;
 import com.example.restaurantmanagement.service.ReservationService;
 import com.example.restaurantmanagement.service.TableInfoService;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,93 +23,99 @@ public class TableInfoController {
     private final TableInfoService tableInfoService;
     private final ReservationService reservationService;
 
-    @Autowired
     public TableInfoController(TableInfoService tableInfoService, ReservationService reservationService) {
         this.tableInfoService = tableInfoService;
         this.reservationService = reservationService;
     }
 
-    //  CREATE
-    @PostMapping
-    public ResponseEntity<?> createTable(@RequestBody TableInfo tableInfo) {
+    // ✅ CREATE
+    @PostMapping("/create")
+    public ResponseEntity<ResponseObject> createTable(@RequestBody TableInfo tableInfo) {
         try {
-            // Nếu có reservation được gửi kèm
-            if (tableInfo.getReservation() != null) {
-                Integer reservationId = tableInfo.getReservation().getReservationId();
-
-                if (reservationId != null) {
-                    Optional<Reservation> resOpt = reservationService.getReservationById(reservationId);
-                    if (resOpt.isPresent()) {
-                        tableInfo.setReservation(resOpt.get());
-                    } else {
-                        return ResponseEntity.badRequest().body("Reservation with ID " + reservationId + " not found.");
-                    }
+            if (tableInfo.getReservation() != null && tableInfo.getReservation().getId() != null) {
+                Integer resId = tableInfo.getReservation().getId();
+                Optional<Reservation> resOpt = reservationService.getReservationById(resId);
+                if (resOpt.isPresent()) {
+                    tableInfo.setReservation(resOpt.get());
                 } else {
-                    // Nếu reservation object có nhưng thiếu ID
-                    tableInfo.setReservation(null); // Cho phép null thay vì báo lỗi
+                    return ResponseEntity.badRequest()
+                            .body(new ResponseObject("CREATE_FAILED", "Reservation with ID " + resId + " not found"));
                 }
             } else {
-                tableInfo.setReservation(null); // Rõ ràng: nếu không có thì set null luôn
+                tableInfo.setReservation(null);
             }
 
-            // Lưu thông tin bàn
-            TableInfo saved = tableInfoService.saveTableInfo(tableInfo);
-            return ResponseEntity.ok(saved);
+            TableInfo created = tableInfoService.createTableInfo(tableInfo);
+            return ResponseEntity.ok(new ResponseObject(created));
 
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error occurred while creating table: " + e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(new ResponseObject("CREATE_FAILED", e.getMessage()));
         }
     }
 
-
-    //  GET ALL
+    // ✅ READ ALL
     @GetMapping
-    public ResponseEntity<List<TableInfo>> getAllTables() {
-        return ResponseEntity.ok(tableInfoService.getAllTableInfos());
+    public ResponseEntity<ResponseObject> getAllTables() {
+        List<TableInfo> tables = tableInfoService.getAllTableInfos();
+        return ResponseEntity.ok(new ResponseObject(tables));
     }
 
-    //  GET BY ID
+    // ✅ READ BY ID
     @GetMapping("/{id}")
-    public ResponseEntity<?> getTable(@PathVariable Integer id) {
+    public ResponseEntity<ResponseObject> getTable(@PathVariable Integer id) {
         Optional<TableInfo> table = tableInfoService.getTableInfoById(id);
-        return table.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return table.map(value -> ResponseEntity.ok(new ResponseObject(value)))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject("NOT_FOUND", "Table not found")));
     }
 
-    //  UPDATE
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateTable(@PathVariable Integer id, @RequestBody TableInfo updated) {
+    // ✅ UPDATE
+    @PostMapping("/update/{id}")
+    public ResponseEntity<ResponseObject> updateTable(@PathVariable Integer id,
+                                                      @RequestBody TableInfo updated) {
         Optional<TableInfo> tableOpt = tableInfoService.getTableInfoById(id);
         if (tableOpt.isPresent()) {
-            TableInfo table = tableOpt.get();
-            table.setTableNumber(updated.getTableNumber());
-            table.setCapacity(updated.getCapacity());
-            table.setStatus(updated.getStatus());
+            TableInfo existing = tableOpt.get();
+            existing.setTableNumber(updated.getTableNumber());
+            existing.setCapacity(updated.getCapacity());
+            existing.setStatus(updated.getStatus());
 
-            if (updated.getReservation() != null && updated.getReservation().getReservationId() != null) {
-                Optional<Reservation> resOpt = reservationService.getReservationById(updated.getReservation().getReservationId());
+            if (updated.getReservation() != null && updated.getReservation().getId() != null) {
+                Optional<Reservation> resOpt = reservationService.getReservationById(updated.getReservation().getId());
                 if (resOpt.isPresent()) {
-                    table.setReservation(resOpt.get());
+                    existing.setReservation(resOpt.get());
                 } else {
-                    return ResponseEntity.badRequest().body("Reservation not found");
+                    return ResponseEntity.badRequest()
+                            .body(new ResponseObject("UPDATE_FAILED", "Reservation not found"));
                 }
             } else {
-                table.setReservation(null);
+                existing.setReservation(null);
             }
 
-            return ResponseEntity.ok(tableInfoService.saveTableInfo(table));
+            TableInfo updatedTable = tableInfoService.updateTableInfo(existing);
+            return ResponseEntity.ok(new ResponseObject(updatedTable));
         }
-        return ResponseEntity.notFound().build();
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ResponseObject("NOT_FOUND", "Table not found with ID = " + id));
     }
 
-    //  DELETE
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteTable(@PathVariable Integer id) {
-        if (tableInfoService.getTableInfoById(id).isPresent()) {
+    // ✅ DELETE
+    @PostMapping("/delete/{id}")
+    public ResponseEntity<ResponseObject> deleteTable(@PathVariable Integer id) {
+        Optional<TableInfo> tableOpt = tableInfoService.getTableInfoById(id);
+        if (tableOpt.isPresent()) {
             tableInfoService.deleteTableInfo(id);
-            return ResponseEntity.ok("Deleted successfully");
+            return ResponseEntity.ok(new ResponseObject("SUCCESS", "Table deleted successfully"));
         }
-        return ResponseEntity.status(404).body("Table not found");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ResponseObject("NOT_FOUND", "Table not found with ID = " + id));
+    }
+    // ✅ Lấy bàn trống
+    @GetMapping("/available")
+    public ResponseEntity<ResponseObject> getAvailableTables() {
+        List<TableInfo> availableTables = tableInfoService.getAvailableTables();
+        return ResponseEntity.ok(new ResponseObject(availableTables));
     }
 
 

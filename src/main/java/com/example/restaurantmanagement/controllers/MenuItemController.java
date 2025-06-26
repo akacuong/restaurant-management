@@ -1,8 +1,9 @@
 package com.example.restaurantmanagement.controllers;
 
 import com.example.restaurantmanagement.model.MenuItem;
+import com.example.restaurantmanagement.response.ResponseObject;
 import com.example.restaurantmanagement.service.MenuItemService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,53 +13,63 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/menu-items")
 public class MenuItemController {
+
     private final MenuItemService menuItemService;
-    @Autowired
+
     public MenuItemController(MenuItemService menuItemService) {
         this.menuItemService = menuItemService;
     }
 
-    // CREATE
-    @PostMapping
-    public ResponseEntity<MenuItem> createMenuItem(@RequestBody MenuItem item) {
-        return ResponseEntity.ok(menuItemService.saveMenuItem(item));
+    // ✅ CREATE
+    @PostMapping("/create")
+    public ResponseEntity<ResponseObject> createMenuItem(@RequestBody MenuItem item) {
+        try {
+            MenuItem created = menuItemService.createMenuItem(item);
+            return ResponseEntity.ok(new ResponseObject(created));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(new ResponseObject("CREATE_FAILED", ex.getMessage()));
+        }
     }
 
-    // READ ALL
+    // ✅ READ ALL
     @GetMapping
-    public ResponseEntity<List<MenuItem>> getAllMenuItems() {
-        return ResponseEntity.ok(menuItemService.getAllMenuItems());
+    public ResponseEntity<ResponseObject> getAllMenuItems() {
+        List<MenuItem> items = menuItemService.getAllMenuItems();
+        return ResponseEntity.ok(new ResponseObject(items));
     }
 
-    // READ BY ID
+    // ✅ READ BY ID
     @GetMapping("/{id}")
-    public ResponseEntity<?> getMenuItemById(@PathVariable Integer id) {
+    public ResponseEntity<ResponseObject> getMenuItemById(@PathVariable Integer id) {
         Optional<MenuItem> optional = menuItemService.getMenuItemById(id);
-        return optional.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return optional.map(item -> ResponseEntity.ok(new ResponseObject(item)))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject("NOT_FOUND", "Menu item not found")));
     }
-    //  UPDATE
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateMenuItem(@PathVariable Integer id, @RequestBody MenuItem updated) {
+
+    // ✅ UPDATE
+    @PostMapping("/update/{id}")
+    public ResponseEntity<ResponseObject> updateMenuItem(@PathVariable Integer id,
+                                                         @RequestBody MenuItem updated) {
+        try {
+            updated.setId(id); // set ID từ path
+            MenuItem result = menuItemService.updateMenuItem(updated);
+            return ResponseEntity.ok(new ResponseObject(result));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(new ResponseObject("UPDATE_FAILED", ex.getMessage()));
+        }
+    }
+
+    // ✅ DELETE
+    @PostMapping("/delete/{id}")
+    public ResponseEntity<ResponseObject> deleteMenuItem(@PathVariable Integer id) {
         Optional<MenuItem> optional = menuItemService.getMenuItemById(id);
         if (optional.isPresent()) {
-            MenuItem existing = optional.get();
-            existing.setName(updated.getName());
-            existing.setPrice(updated.getPrice());
-            existing.setDescription(updated.getDescription());
-            existing.setCategory(updated.getCategory());
-            return ResponseEntity.ok(menuItemService.saveMenuItem(existing));
-        }
-        return ResponseEntity.status(404).body("Menu item not found");
-    }
-
-    // DELETE
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteMenuItem(@PathVariable Integer id) {
-        if (menuItemService.getMenuItemById(id).isPresent()) {
             menuItemService.deleteMenuItem(id);
-            return ResponseEntity.ok("Deleted successfully");
+            return ResponseEntity.ok(new ResponseObject("SUCCESS", "Menu item deleted successfully"));
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ResponseObject("NOT_FOUND", "Menu item not found"));
         }
-        return ResponseEntity.status(404).body("Menu item not found");
     }
 }

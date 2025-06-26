@@ -4,12 +4,13 @@ import jakarta.persistence.*;
 
 @Entity
 public class Customer {
+
     @Id
-    private Integer customerId;
-    @OneToOne
-    @MapsId
-    @JoinColumn(name = "customer_id")
-    private Account account;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @Column(name = "account_id")
+    private Integer accountId; // chỉ lưu ID, không tham chiếu object
 
     private String name;
 
@@ -19,24 +20,25 @@ public class Customer {
     private String email;
 
     private String address;
+
     public Customer() {}
 
     // Getters and Setters
 
-    public Integer getCustomerId() {
-        return customerId;
+    public Integer getId() {
+        return id;
     }
 
-    public void setCustomerId(Integer customerId) {
-        this.customerId = customerId;
+    public void setId(Integer id) {
+        this.id = id;
     }
 
-    public Account getAccount() {
-        return account;
+    public Integer getAccountId() {
+        return accountId;
     }
 
-    public void setAccount(Account account) {
-        this.account = account;
+    public void setAccountId(Integer accountId) {
+        this.accountId = accountId;
     }
 
     public String getName() {

@@ -7,11 +7,13 @@ import java.util.Optional;
 
 public interface ReservationService {
 
-    Reservation saveReservation(Reservation reservation);
+    Reservation createReservation(Reservation reservation);           // ✅ CREATE
 
-    Optional<Reservation> getReservationById(Integer id);
+    Reservation updateReservation(Reservation reservation);           // ✅ UPDATE
 
-    List<Reservation> getAllReservations();
+    Optional<Reservation> getReservationById(Integer id);            // ✅ READ ONE
 
-    void deleteReservation(Integer id);
+    List<Reservation> getAllReservations();                          // ✅ READ ALL
+
+    void deleteReservation(Integer id);                              // ✅ DELETE
 }

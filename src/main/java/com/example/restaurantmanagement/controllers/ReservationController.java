@@ -1,8 +1,9 @@
 package com.example.restaurantmanagement.controllers;
 
 import com.example.restaurantmanagement.model.Reservation;
+import com.example.restaurantmanagement.response.ResponseObject;
 import com.example.restaurantmanagement.service.ReservationService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,58 +16,61 @@ public class ReservationController {
 
     private final ReservationService reservationService;
 
-    @Autowired
     public ReservationController(ReservationService reservationService) {
         this.reservationService = reservationService;
     }
 
     // ✅ CREATE
-    @PostMapping
-    public ResponseEntity<Reservation> createReservation(@RequestBody Reservation reservation) {
-        Reservation saved = reservationService.saveReservation(reservation);
-        return ResponseEntity.ok(saved);
+    @PostMapping("/create")
+    public ResponseEntity<ResponseObject> createReservation(@RequestBody Reservation reservation) {
+        try {
+            Reservation saved = reservationService.createReservation(reservation);
+            return ResponseEntity.ok(new ResponseObject(saved));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest().body(new ResponseObject("CREATE_FAILED", ex.getMessage()));
+        }
     }
 
     // ✅ READ ALL
     @GetMapping
-    public ResponseEntity<List<Reservation>> getAllReservations() {
-        return ResponseEntity.ok(reservationService.getAllReservations());
+    public ResponseEntity<ResponseObject> getAllReservations() {
+        List<Reservation> list = reservationService.getAllReservations();
+        return ResponseEntity.ok(new ResponseObject(list));
     }
 
     // ✅ READ BY ID
     @GetMapping("/{id}")
-    public ResponseEntity<?> getReservation(@PathVariable Integer id) {
+    public ResponseEntity<ResponseObject> getReservation(@PathVariable Integer id) {
         Optional<Reservation> res = reservationService.getReservationById(id);
-        return res.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return res.map(r -> ResponseEntity.ok(new ResponseObject(r)))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ResponseObject("NOT_FOUND", "Reservation not found")));
     }
 
     // ✅ UPDATE
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateReservation(@PathVariable Integer id, @RequestBody Reservation updated) {
-        Optional<Reservation> optional = reservationService.getReservationById(id);
-        if (optional.isPresent()) {
-            Reservation res = optional.get();
-            res.setTime(updated.getTime());
-            res.setNote(updated.getNote());
-            res.setNumberOfPeople(updated.getNumberOfPeople());
-            res.setStatus(updated.getStatus());
-            res.setCustomer(updated.getCustomer());
-            return ResponseEntity.ok(reservationService.saveReservation(res));
-        } else {
-            return ResponseEntity.notFound().build();
+    @PostMapping("/update/{id}")
+    public ResponseEntity<ResponseObject> updateReservation(@PathVariable Integer id,
+                                                            @RequestBody Reservation updated) {
+        try {
+            updated.setId(id);
+            Reservation result = reservationService.updateReservation(updated);
+            return ResponseEntity.ok(new ResponseObject(result));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.badRequest()
+                    .body(new ResponseObject("UPDATE_FAILED", ex.getMessage()));
         }
     }
 
-
     // ✅ DELETE
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteReservation(@PathVariable Integer id) {
-        if (reservationService.getReservationById(id).isPresent()) {
+    @PostMapping("/delete/{id}")
+    public ResponseEntity<ResponseObject> deleteReservation(@PathVariable Integer id) {
+        Optional<Reservation> existing = reservationService.getReservationById(id);
+        if (existing.isPresent()) {
             reservationService.deleteReservation(id);
-            return ResponseEntity.ok("Deleted successfully.");
+            return ResponseEntity.ok(new ResponseObject("SUCCESS", "Reservation deleted successfully"));
         } else {
-            return ResponseEntity.status(404).body("Reservation not found.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ResponseObject("NOT_FOUND", "Reservation not found"));
         }
     }
 }

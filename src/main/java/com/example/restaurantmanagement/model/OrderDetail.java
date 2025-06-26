@@ -11,7 +11,6 @@ public class OrderDetail {
     @ManyToOne
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
-
     @Id
     @ManyToOne
     @JoinColumn(name = "item_id", nullable = false)
@@ -19,7 +18,6 @@ public class OrderDetail {
 
     private Integer quantity;
 
-    private BigDecimal price;
 
     // Composite key class
     public static class OrderDetailId implements Serializable {
@@ -73,13 +71,5 @@ public class OrderDetail {
 
     public void setQuantity(Integer quantity) {
         this.quantity = quantity;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setPrice(BigDecimal price) {
-        this.price = price;
     }
 }

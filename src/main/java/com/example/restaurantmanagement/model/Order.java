@@ -10,7 +10,7 @@ public class Order {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer orderId;
+    private Integer id;
 
     @ManyToOne
     @JoinColumn(name = "customer_id", nullable = false)
@@ -34,12 +34,12 @@ public class Order {
 
     // Getters and setters
 
-    public Integer getOrderId() {
-        return orderId;
+    public Integer getId() {
+        return id;
     }
 
-    public void setOrderId(Integer orderId) {
-        this.orderId = orderId;
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public Customer getCustomer() {

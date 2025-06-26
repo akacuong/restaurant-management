@@ -7,11 +7,13 @@ import java.util.Optional;
 
 public interface OrderService {
 
-    Order saveOrder(Order order);
+    Order createOrder(Order order);                       // ✅ CREATE
 
-    Optional<Order> getOrderById(Integer id);
+    Order updateOrder(Order order);                       // ✅ UPDATE
 
-    List<Order> getAllOrders();
+    Optional<Order> getOrderById(Integer id);             // ✅ READ ONE
 
-    void deleteOrder(Integer id);
+    List<Order> getAllOrders();                           // ✅ READ ALL
+
+    void deleteOrder(Integer id);                         // ✅ DELETE
 }

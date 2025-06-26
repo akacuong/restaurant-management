@@ -9,7 +9,7 @@ public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer paymentId;
+    private Integer id;
 
     @OneToOne
     @JoinColumn(name = "order_id", nullable = false, unique = true)
@@ -32,12 +32,12 @@ public class Payment {
     }
 
     // Getters and Setters
-    public Integer getPaymentId() {
-        return paymentId;
+    public Integer getId() {
+        return id;
     }
 
-    public void setPaymentId(Integer paymentId) {
-        this.paymentId = paymentId;
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public Order getOrder() {

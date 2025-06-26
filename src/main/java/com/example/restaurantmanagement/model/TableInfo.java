@@ -8,7 +8,7 @@ public class TableInfo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer tableId;
+    private Integer id;
 
     @ManyToOne
     @JoinColumn(name = "reservation_id")
@@ -29,12 +29,12 @@ public class TableInfo {
         OCCUPIED
     }
     // Getters and Setters
-    public Integer getTableId() {
-        return tableId;
+    public Integer getId() {
+        return id;
     }
 
-    public void setTableId(Integer tableId) {
-        this.tableId = tableId;
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public Reservation getReservation() {

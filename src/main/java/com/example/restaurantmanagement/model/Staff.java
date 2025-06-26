@@ -7,8 +7,11 @@ import java.time.LocalDate;
 public class Staff {
 
     @Id
-    @Column(name = "staff_id") // Có thể đặt lại tên cho rõ ràng
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "staff_id")
     private Integer id;
+    @Column(name = "account_id")
+    private Integer accountId; // chỉ lưu ID, không ánh xạ sang Account
 
     private String name;
 
@@ -21,20 +24,24 @@ public class Staff {
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
 
-    @OneToOne
-    @MapsId
-    @JoinColumn(name = "staff_id") // staff_id vừa là khóa chính vừa là foreign key
-    private Account account;
-
     public Staff() {}
 
     // Getters and Setters
+
     public Integer getId() {
         return id;
     }
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public Integer getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(Integer accountId) {
+        this.accountId = accountId;
     }
 
     public String getName() {
@@ -75,13 +82,5 @@ public class Staff {
 
     public void setDateOfBirth(LocalDate dateOfBirth) {
         this.dateOfBirth = dateOfBirth;
-    }
-
-    public Account getAccount() {
-        return account;
-    }
-
-    public void setAccount(Account account) {
-        this.account = account;
     }
 }

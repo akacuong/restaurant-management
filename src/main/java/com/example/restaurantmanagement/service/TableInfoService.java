@@ -2,17 +2,22 @@ package com.example.restaurantmanagement.service;
 
 import com.example.restaurantmanagement.model.TableInfo;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 public interface TableInfoService {
 
-    TableInfo saveTableInfo(TableInfo tableInfo);
+    TableInfo createTableInfo(TableInfo tableInfo);           // ✅ CREATE
 
-    Optional<TableInfo> getTableInfoById(Integer id);
+    TableInfo updateTableInfo(TableInfo tableInfo);           // ✅ UPDATE
 
-    List<TableInfo> getAllTableInfos();
+    List<TableInfo> getAllTableInfos();                       // ✅ READ ALL
 
-    void deleteTableInfo(Integer id);
+    Optional<TableInfo> getTableInfoById(Integer id);         // ✅ READ ONE
+
+    void deleteTableInfo(Integer id);                         // ✅ DELETE
+
+    List<TableInfo> getAvailableTables();
 
 }
