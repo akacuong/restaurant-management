@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -21,7 +22,7 @@ public class OrderDetailController {
         this.orderDetailService = orderDetailService;
     }
 
-    // ✅ CREATE
+    // CREATE
     @PostMapping("/create")
     public ResponseEntity<ResponseObject> createOrderDetail(@RequestBody OrderDetail detail) {
         try {
@@ -33,21 +34,21 @@ public class OrderDetailController {
         }
     }
 
-    // ✅ READ ALL
+    // READ ALL
     @GetMapping
     public ResponseEntity<ResponseObject> getAllOrderDetails() {
         List<OrderDetail> details = orderDetailService.getAllOrderDetails();
         return ResponseEntity.ok(new ResponseObject(details));
     }
 
-    // ✅ READ BY ORDER ID
+    // READ BY ORDER ID
     @GetMapping("/order/{orderId}")
     public ResponseEntity<ResponseObject> getDetailsByOrderId(@PathVariable Integer orderId) {
         List<OrderDetail> details = orderDetailService.getOrderDetailsByOrderId(orderId);
         return ResponseEntity.ok(new ResponseObject(details));
     }
 
-    // ✅ READ BY COMPOSITE KEY (dễ tìm kiếm hơn)
+    // READ BY COMPOSITE KEY (dễ tìm kiếm hơn)
     @GetMapping("/find")
     public ResponseEntity<ResponseObject> getDetailById(@RequestParam Integer orderId, @RequestParam Integer itemId) {
         OrderDetailId id = new OrderDetailId(orderId, itemId);
@@ -57,7 +58,7 @@ public class OrderDetailController {
                         .body(new ResponseObject("NOT_FOUND", "Order detail not found")));
     }
 
-    // ✅ UPDATE
+    // UPDATE
     @PostMapping("/update")
     public ResponseEntity<ResponseObject> updateOrderDetail(@RequestBody OrderDetail detail) {
         try {
@@ -69,12 +70,20 @@ public class OrderDetailController {
         }
     }
 
-    // ✅ DELETE BY COMPOSITE KEY
+    // DELETE BY COMPOSITE KEY
     @PostMapping("/delete")
-    public ResponseEntity<ResponseObject> deleteOrderDetail(@RequestParam Integer orderId,
-                                                            @RequestParam Integer itemId) {
+    public ResponseEntity<ResponseObject> deleteOrderDetail(@RequestBody Map<String, Integer> body) {
+        Integer orderId = body.get("orderId");
+        Integer itemId = body.get("itemId");
+
+        if (orderId == null || itemId == null) {
+            return ResponseEntity.badRequest()
+                    .body(new ResponseObject("INVALID_REQUEST", "Missing orderId or itemId"));
+        }
+
         OrderDetailId id = new OrderDetailId(orderId, itemId);
         Optional<OrderDetail> detail = orderDetailService.getOrderDetailById(id);
+
         if (detail.isPresent()) {
             orderDetailService.deleteOrderDetail(id);
             return ResponseEntity.ok(new ResponseObject("SUCCESS", "Order detail deleted successfully"));

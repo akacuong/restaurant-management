@@ -14,14 +14,14 @@ public class TableInfo {
     @JoinColumn(name = "reservation_id")
     private Reservation reservation;
 
-    @Column(name = "table_number", nullable = false)
+    @Column(name = "table_number", nullable = false,unique = true)
     private String tableNumber;
 
     private Integer capacity;
 
     @Enumerated(EnumType.STRING)
-    private TableStatus status;
-
+    @Column(nullable = false)
+    private TableStatus status = TableStatus.EMPTY;
     public TableInfo() {}
     public enum TableStatus {
         EMPTY,

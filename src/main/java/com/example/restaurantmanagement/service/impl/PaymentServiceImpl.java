@@ -1,5 +1,7 @@
 package com.example.restaurantmanagement.service.impl;
 
+import com.example.restaurantmanagement.infrastructure.exception.ErrorCode;
+import com.example.restaurantmanagement.infrastructure.exception.NVException;
 import com.example.restaurantmanagement.model.Order;
 import com.example.restaurantmanagement.model.Payment;
 import com.example.restaurantmanagement.repository.PaymentRepository;
@@ -19,11 +21,10 @@ public class PaymentServiceImpl implements PaymentService {
         this.paymentRepository = paymentRepository;
     }
 
-    // ✅ CREATE
     @Override
     public Payment createPayment(Payment payment) {
         if (payment.getId() != null) {
-            throw new IllegalArgumentException("New payment must not have an ID");
+            throw new NVException(ErrorCode.PAYMENT_ID_MUST_BE_NULL_WHEN_CREATING);
         }
 
         if (payment.getPaymentTime() == null) {
@@ -32,25 +33,21 @@ public class PaymentServiceImpl implements PaymentService {
 
         Order order = payment.getOrder();
         if (order != null) {
-            order.setStatus("Thanh toán thành công");
+            order.setStatus("paid successfully");
         }
 
         return paymentRepository.save(payment);
     }
 
-    // ✅ UPDATE
     @Override
     public Payment updatePayment(Payment updated) {
         if (updated.getId() == null) {
-            throw new IllegalArgumentException("Payment ID must not be null for update");
+            throw new NVException(ErrorCode.PAYMENT_ID_REQUIRED_FOR_UPDATE);
         }
 
-        Optional<Payment> existingOpt = paymentRepository.findById(updated.getId());
-        if (existingOpt.isEmpty()) {
-            throw new RuntimeException("Payment not found with ID = " + updated.getId());
-        }
+        Payment existing = paymentRepository.findById(updated.getId())
+                .orElseThrow(() -> new NVException(ErrorCode.PAYMENT_NOT_FOUND, new Object[]{updated.getId()}));
 
-        Payment existing = existingOpt.get();
         existing.setAmount(updated.getAmount());
         existing.setMethod(updated.getMethod());
         existing.setPaymentTime(updated.getPaymentTime());
@@ -59,29 +56,25 @@ public class PaymentServiceImpl implements PaymentService {
         return paymentRepository.save(existing);
     }
 
-    // ✅ READ BY ID
     @Override
     public Optional<Payment> getPaymentById(Integer id) {
         return paymentRepository.findById(id);
     }
 
-    // ✅ READ BY ORDER ID
     @Override
     public Optional<Payment> getPaymentByOrderId(Integer orderId) {
         return Optional.ofNullable(paymentRepository.getPaymentByOrderId(orderId));
     }
 
-    // ✅ READ ALL
     @Override
     public List<Payment> getAllPayments() {
         return paymentRepository.findAll();
     }
 
-    // ✅ DELETE
     @Override
     public void deletePayment(Integer id) {
         if (!paymentRepository.existsById(id)) {
-            throw new RuntimeException("Payment not found with ID = " + id);
+            throw new NVException(ErrorCode.PAYMENT_NOT_FOUND, new Object[]{id});
         }
         paymentRepository.deleteById(id);
     }

@@ -1,5 +1,7 @@
 package com.example.restaurantmanagement.service.impl;
 
+import com.example.restaurantmanagement.infrastructure.exception.ErrorCode;
+import com.example.restaurantmanagement.infrastructure.exception.NVException;
 import com.example.restaurantmanagement.model.MenuItem;
 import com.example.restaurantmanagement.model.Order;
 import com.example.restaurantmanagement.model.OrderDetail;
@@ -28,34 +30,31 @@ public class OrderDetailServiceImpl implements OrderDetailService {
         this.menuItemRepository = menuItemRepository;
     }
 
-    // ✅ CREATE
     @Override
     public OrderDetail createOrderDetail(OrderDetail orderDetail) {
         if (orderDetail.getOrder() == null || orderDetail.getItem() == null) {
-            throw new IllegalArgumentException("Order and MenuItem must not be null");
+            throw new NVException(ErrorCode.ORDER_OR_MENUITEM_REQUIRED);
         }
 
         Integer orderId = orderDetail.getOrder().getId();
         Integer itemId = orderDetail.getItem().getId();
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found with ID = " + orderId));
+                .orElseThrow(() -> new NVException(ErrorCode.ORDER_NOT_FOUND, new Object[]{orderId}));
 
         MenuItem item = menuItemRepository.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("MenuItem not found with ID = " + itemId));
+                .orElseThrow(() -> new NVException(ErrorCode.MENU_ITEM_NOT_FOUND, new Object[]{itemId}));
 
-        // Gán lại thực thể đã tồn tại để tránh lỗi transient
         orderDetail.setOrder(order);
         orderDetail.setItem(item);
 
         return orderDetailRepository.save(orderDetail);
     }
 
-    // ✅ UPDATE
     @Override
     public OrderDetail updateOrderDetail(OrderDetail updated) {
         if (updated.getOrder() == null || updated.getItem() == null) {
-            throw new IllegalArgumentException("Order and MenuItem must not be null for update");
+            throw new NVException(ErrorCode.ORDER_OR_MENUITEM_REQUIRED);
         }
 
         OrderDetailId id = new OrderDetailId(
@@ -64,36 +63,32 @@ public class OrderDetailServiceImpl implements OrderDetailService {
         );
 
         OrderDetail existing = orderDetailRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("OrderDetail not found with ID: " + id));
+                .orElseThrow(() -> new NVException(ErrorCode.ORDER_DETAIL_NOT_FOUND, new Object[]{id}));
 
         existing.setQuantity(updated.getQuantity());
 
         return orderDetailRepository.save(existing);
     }
 
-    // ✅ READ ONE
     @Override
     public Optional<OrderDetail> getOrderDetailById(OrderDetailId id) {
         return orderDetailRepository.findById(id);
     }
 
-    // ✅ READ ALL
     @Override
     public List<OrderDetail> getAllOrderDetails() {
         return orderDetailRepository.findAll();
     }
 
-    // ✅ READ BY ORDER ID
     @Override
     public List<OrderDetail> getOrderDetailsByOrderId(Integer orderId) {
         return orderDetailRepository.findByOrderOrderId(orderId);
     }
 
-    // ✅ DELETE
     @Override
     public void deleteOrderDetail(OrderDetailId id) {
         if (!orderDetailRepository.existsById(id)) {
-            throw new RuntimeException("OrderDetail not found with ID: " + id);
+            throw new NVException(ErrorCode.ORDER_DETAIL_NOT_FOUND, new Object[]{id});
         }
         orderDetailRepository.deleteById(id);
     }

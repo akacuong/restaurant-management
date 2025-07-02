@@ -17,15 +17,12 @@ public class MenuItem {
     private String description;
 
     private String category;
-
     // Constructors
     public MenuItem() {}
-
     // Getters & Setters
     public Integer getId() {
         return id;
     }
-
     public void setId(Integer id) {
         this.id = id;
     }

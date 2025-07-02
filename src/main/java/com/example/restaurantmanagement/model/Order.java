@@ -27,7 +27,7 @@ public class Order {
     private LocalDateTime orderTime;
 
     @Column(nullable = false)
-    private String status = "Chưa thanh toán";
+    private String status = "Not pay";
     private BigDecimal total;
 
     public Order() {}

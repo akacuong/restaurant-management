@@ -7,7 +7,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -20,7 +22,7 @@ public class MenuItemController {
         this.menuItemService = menuItemService;
     }
 
-    // ✅ CREATE
+    // CREATE
     @PostMapping("/create")
     public ResponseEntity<ResponseObject> createMenuItem(@RequestBody MenuItem item) {
         try {
@@ -31,14 +33,14 @@ public class MenuItemController {
         }
     }
 
-    // ✅ READ ALL
+    // READ ALL
     @GetMapping
     public ResponseEntity<ResponseObject> getAllMenuItems() {
         List<MenuItem> items = menuItemService.getAllMenuItems();
         return ResponseEntity.ok(new ResponseObject(items));
     }
 
-    // ✅ READ BY ID
+    // READ BY ID
     @GetMapping("/{id}")
     public ResponseEntity<ResponseObject> getMenuItemById(@PathVariable Integer id) {
         Optional<MenuItem> optional = menuItemService.getMenuItemById(id);
@@ -47,7 +49,7 @@ public class MenuItemController {
                         .body(new ResponseObject("NOT_FOUND", "Menu item not found")));
     }
 
-    // ✅ UPDATE
+    // UPDATE
     @PostMapping("/update/{id}")
     public ResponseEntity<ResponseObject> updateMenuItem(@PathVariable Integer id,
                                                          @RequestBody MenuItem updated) {
@@ -60,9 +62,11 @@ public class MenuItemController {
         }
     }
 
-    // ✅ DELETE
-    @PostMapping("/delete/{id}")
-    public ResponseEntity<ResponseObject> deleteMenuItem(@PathVariable Integer id) {
+    // DELETE
+    @PostMapping("/delete")
+    public ResponseEntity<ResponseObject> deleteMenuItem(@RequestBody Map<String, Integer> payload) {
+        Integer id = payload.get("id");
+
         Optional<MenuItem> optional = menuItemService.getMenuItemById(id);
         if (optional.isPresent()) {
             menuItemService.deleteMenuItem(id);
@@ -72,4 +76,18 @@ public class MenuItemController {
                     .body(new ResponseObject("NOT_FOUND", "Menu item not found"));
         }
     }
+    @GetMapping("/search")
+    public ResponseEntity<ResponseObject> searchMenuItems(@RequestParam String keyword) {
+        return ResponseEntity.ok(new ResponseObject(menuItemService.searchAndSortMenuItems(keyword)));
+    }
+    @GetMapping("/category")
+    public ResponseEntity<ResponseObject> getByCategory(@RequestParam String category) {
+        return ResponseEntity.ok(new ResponseObject(menuItemService.getMenuItemsByCategory(category)));
+    }
+    @GetMapping("/check-name")
+    public ResponseEntity<ResponseObject> checkName(@RequestParam String name) {
+        Map<String, Object> result = menuItemService.checkNameAvailability(name);
+        return ResponseEntity.ok(new ResponseObject(result));
+    }
+
 }

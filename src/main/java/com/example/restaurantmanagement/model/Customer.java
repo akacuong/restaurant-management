@@ -2,6 +2,9 @@ package com.example.restaurantmanagement.model;
 
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 public class Customer {
 
@@ -20,6 +23,11 @@ public class Customer {
     private String email;
 
     private String address;
+    private String profileImage;
+    @ElementCollection
+    @CollectionTable(name = "customer_gallery", joinColumns = @JoinColumn(name = "customer_id"))
+    @Column(name = "image_path")
+    private List<String> galleryImages = new ArrayList<>();
 
     public Customer() {}
 
@@ -71,5 +79,19 @@ public class Customer {
 
     public void setAddress(String address) {
         this.address = address;
+    }
+    public String getProfileImage() {
+        return profileImage;
+    }
+
+    public void setProfileImage(String profileImage) {
+        this.profileImage = profileImage;
+    }
+    public List<String> getGalleryImages() {
+        return galleryImages;
+    }
+
+    public void setGalleryImages(List<String> galleryImages) {
+        this.galleryImages = galleryImages;
     }
 }

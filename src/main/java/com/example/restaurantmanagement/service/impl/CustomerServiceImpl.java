@@ -1,5 +1,7 @@
 package com.example.restaurantmanagement.service.impl;
 
+import com.example.restaurantmanagement.infrastructure.exception.ErrorCode;
+import com.example.restaurantmanagement.infrastructure.exception.NVException;
 import com.example.restaurantmanagement.model.Customer;
 import com.example.restaurantmanagement.repository.AccountRepository;
 import com.example.restaurantmanagement.repository.CustomerRepository;
@@ -25,12 +27,12 @@ public class CustomerServiceImpl implements CustomerService {
         Integer accountId = customer.getAccountId();
 
         if (accountId == null) {
-            throw new IllegalArgumentException("Account ID must not be null");
+            throw new NVException(ErrorCode.INVALID_REQUEST, new Object[]{"Account ID must not be null"});
         }
 
         boolean accountExists = accountRepository.existsById(accountId);
         if (!accountExists) {
-            throw new RuntimeException("Account not found with ID = " + accountId);
+            throw new NVException(ErrorCode.USER_NOT_FOUND, new Object[]{"Account ID = " + accountId});
         }
 
         return customerRepository.save(customer);
@@ -39,12 +41,12 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public Customer updateCustomer(Customer updatedCustomer) {
         if (updatedCustomer.getId() == null) {
-            throw new IllegalArgumentException("Customer ID must not be null");
+            throw new NVException(ErrorCode.INVALID_REQUEST, new Object[]{"Customer ID must not be null"});
         }
 
         Optional<Customer> existingOpt = customerRepository.findById(updatedCustomer.getId());
         if (existingOpt.isEmpty()) {
-            throw new RuntimeException("Customer not found with ID = " + updatedCustomer.getId());
+            throw new NVException(ErrorCode.CUSTOMER_NOT_FOUND, new Object[]{updatedCustomer.getId()});
         }
 
         Customer existing = existingOpt.get();
@@ -68,6 +70,9 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public void deleteCustomer(Integer id) {
+        if (!customerRepository.existsById(id)) {
+            throw new NVException(ErrorCode.CUSTOMER_NOT_FOUND, new Object[]{id});
+        }
         customerRepository.deleteById(id);
     }
 }

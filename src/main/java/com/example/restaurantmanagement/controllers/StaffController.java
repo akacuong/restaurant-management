@@ -9,10 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/staff")
+@RequestMapping("/api/staffs")
 public class StaffController {
 
     private final StaffService staffService;
@@ -23,7 +24,7 @@ public class StaffController {
         this.accountRepository = accountRepository;
     }
 
-    // ✅ CREATE
+    // CREATE
     @PostMapping("/create")
     public ResponseEntity<ResponseObject> createStaff(@RequestBody Staff staff) {
         try {
@@ -45,7 +46,7 @@ public class StaffController {
         }
     }
 
-    // ✅ READ by ID
+    // READ by ID
     @GetMapping("/{id}")
     public ResponseEntity<ResponseObject> getStaff(@PathVariable Integer id) {
         Optional<Staff> staff = staffService.getStaffById(id);
@@ -54,14 +55,14 @@ public class StaffController {
                         .body(new ResponseObject("NOT_FOUND", "Staff not found")));
     }
 
-    // ✅ READ ALL
+    // READ ALL
     @GetMapping
     public ResponseEntity<ResponseObject> getAllStaff() {
         List<Staff> staffList = staffService.getAllStaff();
         return ResponseEntity.ok(new ResponseObject(staffList));
     }
 
-    // ✅ UPDATE
+    // UPDATE
     @PostMapping("/update/{id}")
     public ResponseEntity<ResponseObject> updateStaff(@PathVariable Integer id,
                                                       @RequestBody Staff staff) {
@@ -75,9 +76,15 @@ public class StaffController {
         }
     }
 
-    // ✅ DELETE
-    @PostMapping("/delete/{id}")
-    public ResponseEntity<ResponseObject> deleteStaff(@PathVariable Integer id) {
+    // DELETE
+    @PostMapping("/delete")
+    public ResponseEntity<ResponseObject> deleteStaff(@RequestBody Map<String, Integer> payload) {
+        Integer id = payload.get("id");
+        if (id == null) {
+            return ResponseEntity.badRequest()
+                    .body(new ResponseObject("INVALID_REQUEST", "Missing 'id' in request body"));
+        }
+
         Optional<Staff> existing = staffService.getStaffById(id);
         if (existing.isPresent()) {
             staffService.deleteStaff(id);
@@ -87,4 +94,5 @@ public class StaffController {
                     .body(new ResponseObject("NOT_FOUND", "Staff not found"));
         }
     }
+
 }

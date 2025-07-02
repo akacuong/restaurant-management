@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -28,7 +29,7 @@ public class TableInfoController {
         this.reservationService = reservationService;
     }
 
-    // ✅ CREATE
+    // CREATE
     @PostMapping("/create")
     public ResponseEntity<ResponseObject> createTable(@RequestBody TableInfo tableInfo) {
         try {
@@ -53,14 +54,14 @@ public class TableInfoController {
         }
     }
 
-    // ✅ READ ALL
+    // READ ALL
     @GetMapping
     public ResponseEntity<ResponseObject> getAllTables() {
         List<TableInfo> tables = tableInfoService.getAllTableInfos();
         return ResponseEntity.ok(new ResponseObject(tables));
     }
 
-    // ✅ READ BY ID
+    // READ BY ID
     @GetMapping("/{id}")
     public ResponseEntity<ResponseObject> getTable(@PathVariable Integer id) {
         Optional<TableInfo> table = tableInfoService.getTableInfoById(id);
@@ -69,7 +70,7 @@ public class TableInfoController {
                         .body(new ResponseObject("NOT_FOUND", "Table not found")));
     }
 
-    // ✅ UPDATE
+    // UPDATE
     @PostMapping("/update/{id}")
     public ResponseEntity<ResponseObject> updateTable(@PathVariable Integer id,
                                                       @RequestBody TableInfo updated) {
@@ -100,23 +101,39 @@ public class TableInfoController {
                 .body(new ResponseObject("NOT_FOUND", "Table not found with ID = " + id));
     }
 
-    // ✅ DELETE
-    @PostMapping("/delete/{id}")
-    public ResponseEntity<ResponseObject> deleteTable(@PathVariable Integer id) {
+    // DELETE
+    @PostMapping("/delete")
+    public ResponseEntity<ResponseObject> deleteTable(@RequestBody Map<String, Integer> payload) {
+        Integer id = payload.get("id");
+        if (id == null) {
+            return ResponseEntity.badRequest()
+                    .body(new ResponseObject("INVALID_REQUEST", "Missing 'id' in request body"));
+        }
+
         Optional<TableInfo> tableOpt = tableInfoService.getTableInfoById(id);
         if (tableOpt.isPresent()) {
             tableInfoService.deleteTableInfo(id);
             return ResponseEntity.ok(new ResponseObject("SUCCESS", "Table deleted successfully"));
         }
+
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ResponseObject("NOT_FOUND", "Table not found with ID = " + id));
     }
-    // ✅ Lấy bàn trống
+    // Lấy bàn trống
     @GetMapping("/available")
     public ResponseEntity<ResponseObject> getAvailableTables() {
         List<TableInfo> availableTables = tableInfoService.getAvailableTables();
         return ResponseEntity.ok(new ResponseObject(availableTables));
     }
+    @GetMapping("/suggest")
+    public ResponseEntity<ResponseObject> suggestTableCombinations(@RequestParam int numberOfPeople,
+                                                                   @RequestParam String start,
+                                                                   @RequestParam String end) {
+        LocalDateTime startTime = LocalDateTime.parse(start);
+        LocalDateTime endTime = LocalDateTime.parse(end);
 
+        List<List<TableInfo>> suggestions = tableInfoService.suggestTablesForReservation(numberOfPeople, startTime, endTime);
+        return ResponseEntity.ok(new ResponseObject(suggestions));
+    }
 
 }

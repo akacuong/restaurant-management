@@ -8,16 +8,16 @@ import java.util.Optional;
 
 public interface TableInfoService {
 
-    TableInfo createTableInfo(TableInfo tableInfo);           // ✅ CREATE
+    TableInfo createTableInfo(TableInfo tableInfo);
 
-    TableInfo updateTableInfo(TableInfo tableInfo);           // ✅ UPDATE
+    TableInfo updateTableInfo(TableInfo tableInfo);
 
-    List<TableInfo> getAllTableInfos();                       // ✅ READ ALL
+    List<TableInfo> getAllTableInfos();
 
-    Optional<TableInfo> getTableInfoById(Integer id);         // ✅ READ ONE
+    Optional<TableInfo> getTableInfoById(Integer id);
 
-    void deleteTableInfo(Integer id);                         // ✅ DELETE
+    void deleteTableInfo(Integer id);
 
     List<TableInfo> getAvailableTables();
-
+    List<List<TableInfo>> suggestTablesForReservation(int numberOfPeople, LocalDateTime startTime, LocalDateTime endTime);
 }

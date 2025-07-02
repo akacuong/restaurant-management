@@ -24,6 +24,13 @@ public class ResponseObject {
         this.data = data;
         this.requestId = UUID.randomUUID().toString();
     }
+    public ResponseObject(String errorCode, String message, Object data) {
+        this.isSuccess = errorCode.equalsIgnoreCase("SUCCESS");
+        this.errorCode = errorCode;
+        this.message = message;
+        this.data = data;
+        this.requestId = UUID.randomUUID().toString();
+    }
 
     public ResponseObject(String errorCode, String message) {
         this.isSuccess = false;

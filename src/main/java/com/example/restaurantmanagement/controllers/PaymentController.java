@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -20,7 +21,7 @@ public class PaymentController {
         this.paymentService = paymentService;
     }
 
-    // ✅ CREATE
+    // CREATE
     @PostMapping("/create")
     public ResponseEntity<ResponseObject> createPayment(@RequestBody Payment payment) {
         try {
@@ -31,7 +32,7 @@ public class PaymentController {
         }
     }
 
-    // ✅ READ BY ORDER ID
+    // READ BY ORDER ID
     @GetMapping("/order/{orderId}")
     public ResponseEntity<ResponseObject> getPaymentByOrderId(@PathVariable Integer orderId) {
         Optional<Payment> payment = paymentService.getPaymentByOrderId(orderId);
@@ -40,16 +41,21 @@ public class PaymentController {
                         .body(new ResponseObject("NOT_FOUND", "Payment not found for Order ID: " + orderId)));
     }
 
-    // ✅ READ ALL
+    // READ ALL
     @GetMapping
     public ResponseEntity<ResponseObject> getAllPayments() {
         List<Payment> payments = paymentService.getAllPayments();
         return ResponseEntity.ok(new ResponseObject(payments));
     }
 
-    // ✅ DELETE
-    @PostMapping("/delete/{id}")
-    public ResponseEntity<ResponseObject> deletePayment(@PathVariable Integer id) {
+    // DELETE
+    @PostMapping("/delete")
+    public ResponseEntity<ResponseObject> deletePayment(@RequestBody Map<String, Integer> payload) {
+        Integer id = payload.get("id");
+        if (id == null) {
+            return ResponseEntity.badRequest()
+                    .body(new ResponseObject("INVALID_REQUEST", "Missing 'id' in request body"));
+        }
         try {
             paymentService.deletePayment(id);
             return ResponseEntity.ok(new ResponseObject("SUCCESS", "Payment deleted successfully"));

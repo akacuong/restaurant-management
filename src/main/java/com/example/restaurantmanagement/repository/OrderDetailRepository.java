@@ -12,4 +12,7 @@ public interface OrderDetailRepository extends JpaRepository<OrderDetail, OrderD
 
     @Query("SELECT od FROM OrderDetail od WHERE od.order.id = :orderId")
     List<OrderDetail> findByOrderOrderId(@Param("orderId") Integer orderId);
+    @Query("SELECT od.item.id, COUNT(od) as total " +
+            "FROM OrderDetail od GROUP BY od.item.id ORDER BY total DESC")
+    List<Object[]> findPopularMenuItems();
 }
