@@ -12,6 +12,7 @@ import com.example.restaurantmanagement.repository.OrderRepository;
 import com.example.restaurantmanagement.service.OrderDetailService;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,10 +46,26 @@ public class OrderDetailServiceImpl implements OrderDetailService {
         MenuItem item = menuItemRepository.findById(itemId)
                 .orElseThrow(() -> new NVException(ErrorCode.MENU_ITEM_NOT_FOUND, new Object[]{itemId}));
 
-        orderDetail.setOrder(order);
-        orderDetail.setItem(item);
+        int quantityToAdd = Math.max(orderDetail.getQuantity(), 0);
 
-        return orderDetailRepository.save(orderDetail);
+        // Check if detail already exists
+        OrderDetailId id = new OrderDetailId(orderId, itemId);
+        Optional<OrderDetail> existingOpt = orderDetailRepository.findById(id);
+
+        OrderDetail result;
+        if (existingOpt.isPresent()) {
+            OrderDetail existing = existingOpt.get();
+            existing.setQuantity(existing.getQuantity() + quantityToAdd);
+            result = orderDetailRepository.save(existing);
+        } else {
+            orderDetail.setOrder(order);
+            orderDetail.setItem(item);
+            orderDetail.setQuantity(quantityToAdd);
+            result = orderDetailRepository.save(orderDetail);
+        }
+
+        recalculateOrderTotal(order);
+        return result;
     }
 
     @Override
@@ -65,9 +82,21 @@ public class OrderDetailServiceImpl implements OrderDetailService {
         OrderDetail existing = orderDetailRepository.findById(id)
                 .orElseThrow(() -> new NVException(ErrorCode.ORDER_DETAIL_NOT_FOUND, new Object[]{id}));
 
-        existing.setQuantity(updated.getQuantity());
+        int newQuantity = Math.max(updated.getQuantity(), 0);
+        existing.setQuantity(newQuantity);
+        orderDetailRepository.save(existing);
 
-        return orderDetailRepository.save(existing);
+        recalculateOrderTotal(existing.getOrder());
+        return existing;
+    }
+
+    @Override
+    public void deleteOrderDetail(OrderDetailId id) {
+        OrderDetail existing = orderDetailRepository.findById(id)
+                .orElseThrow(() -> new NVException(ErrorCode.ORDER_DETAIL_NOT_FOUND, new Object[]{id}));
+
+        orderDetailRepository.deleteById(id);
+        recalculateOrderTotal(existing.getOrder());
     }
 
     @Override
@@ -85,11 +114,17 @@ public class OrderDetailServiceImpl implements OrderDetailService {
         return orderDetailRepository.findByOrderOrderId(orderId);
     }
 
-    @Override
-    public void deleteOrderDetail(OrderDetailId id) {
-        if (!orderDetailRepository.existsById(id)) {
-            throw new NVException(ErrorCode.ORDER_DETAIL_NOT_FOUND, new Object[]{id});
+    // ✅ Hàm tính lại tổng tiền đơn hàng
+    private void recalculateOrderTotal(Order order) {
+        List<OrderDetail> details = orderDetailRepository.findByOrderOrderId(order.getId());
+        BigDecimal total = BigDecimal.ZERO;
+
+        for (OrderDetail detail : details) {
+            BigDecimal lineTotal = detail.getItem().getPrice().multiply(BigDecimal.valueOf(detail.getQuantity()));
+            total = total.add(lineTotal);
         }
-        orderDetailRepository.deleteById(id);
+
+        order.setTotal(total);
+        orderRepository.save(order);
     }
 }

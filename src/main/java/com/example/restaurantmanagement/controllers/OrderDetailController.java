@@ -48,7 +48,7 @@ public class OrderDetailController {
         return ResponseEntity.ok(new ResponseObject(details));
     }
 
-    // READ BY COMPOSITE KEY (dễ tìm kiếm hơn)
+    // READ BY COMPOSITE KEY
     @GetMapping("/find")
     public ResponseEntity<ResponseObject> getDetailById(@RequestParam Integer orderId, @RequestParam Integer itemId) {
         OrderDetailId id = new OrderDetailId(orderId, itemId);

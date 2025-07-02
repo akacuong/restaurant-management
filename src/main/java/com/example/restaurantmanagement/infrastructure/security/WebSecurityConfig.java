@@ -45,6 +45,7 @@ public class WebSecurityConfig {
                         .requestMatchers("/api/staff-shifts/**").permitAll()
                         .requestMatchers("/api/recommendation/**").permitAll()
                         .requestMatchers("/api/accounts/login/**").permitAll()
+                        .requestMatchers("/api/order-details/**").permitAll()
                         .requestMatchers("/api/accounts/register/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/tables/**").hasRole("CUSTOMER")
                         .requestMatchers(HttpMethod.GET, "/api/menu-items/**").hasRole("CUSTOMER")
