@@ -18,7 +18,6 @@ public class Payment {
     private BigDecimal amount;
 
     private LocalDateTime paymentTime;
-
     private String method;
 
     // Constructors

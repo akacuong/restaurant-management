@@ -4,6 +4,7 @@ import com.example.restaurantmanagement.infrastructure.exception.ErrorCode;
 import com.example.restaurantmanagement.infrastructure.exception.NVException;
 import com.example.restaurantmanagement.model.Order;
 import com.example.restaurantmanagement.model.Payment;
+import com.example.restaurantmanagement.repository.OrderRepository;
 import com.example.restaurantmanagement.repository.PaymentRepository;
 import com.example.restaurantmanagement.service.PaymentService;
 import org.springframework.stereotype.Service;
@@ -16,9 +17,12 @@ import java.util.Optional;
 public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
+    private final OrderRepository orderRepository;
 
-    public PaymentServiceImpl(PaymentRepository paymentRepository) {
+    public PaymentServiceImpl(PaymentRepository paymentRepository,
+                              OrderRepository orderRepository) {
         this.paymentRepository = paymentRepository;
+        this.orderRepository = orderRepository;
     }
 
     @Override
@@ -32,8 +36,14 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         Order order = payment.getOrder();
-        if (order != null) {
-            order.setStatus("paid successfully");
+        if (order != null && order.getId() != null) {
+            Order existingOrder = orderRepository.findById(order.getId())
+                    .orElseThrow(() -> new NVException(ErrorCode.ORDER_NOT_FOUND, new Object[]{order.getId()}));
+            existingOrder.setStatus(Order.OrderStatus.PAID);
+            orderRepository.save(existingOrder);
+            payment.setOrder(existingOrder);
+        } else {
+            throw new NVException(ErrorCode.ORDER_REQUIRED);
         }
 
         return paymentRepository.save(payment);
@@ -47,11 +57,15 @@ public class PaymentServiceImpl implements PaymentService {
 
         Payment existing = paymentRepository.findById(updated.getId())
                 .orElseThrow(() -> new NVException(ErrorCode.PAYMENT_NOT_FOUND, new Object[]{updated.getId()}));
-
         existing.setAmount(updated.getAmount());
         existing.setMethod(updated.getMethod());
         existing.setPaymentTime(updated.getPaymentTime());
-        existing.setOrder(updated.getOrder());
+
+        if (updated.getOrder() != null && updated.getOrder().getId() != null) {
+            Order order = orderRepository.findById(updated.getOrder().getId())
+                    .orElseThrow(() -> new NVException(ErrorCode.ORDER_NOT_FOUND, new Object[]{updated.getOrder().getId()}));
+            existing.setOrder(order);
+        }
 
         return paymentRepository.save(existing);
     }

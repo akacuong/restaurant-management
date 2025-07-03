@@ -10,8 +10,9 @@ public class Staff {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "staff_id")
     private Integer id;
+
     @Column(name = "account_id")
-    private Integer accountId; // chỉ lưu ID, không ánh xạ sang Account
+    private Integer accountId;
 
     private String name;
 
@@ -23,6 +24,9 @@ public class Staff {
 
     @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
+
+    @Column(name = "image")
+    private String image;
 
     public Staff() {}
 
@@ -82,5 +86,13 @@ public class Staff {
 
     public void setDateOfBirth(LocalDate dateOfBirth) {
         this.dateOfBirth = dateOfBirth;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
     }
 }

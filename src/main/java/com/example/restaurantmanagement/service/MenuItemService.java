@@ -1,22 +1,38 @@
 package com.example.restaurantmanagement.service;
 
 import com.example.restaurantmanagement.model.MenuItem;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 public interface MenuItemService {
-    MenuItem createMenuItem(MenuItem item);
-    MenuItem updateMenuItem(MenuItem item);
+
+    // Tạo mới có ảnh
+    MenuItem createMenuItem(MenuItem item, MultipartFile imageFile);
+
+    // Cập nhật có ảnh
+    MenuItem updateMenuItem(MenuItem item, MultipartFile imageFile);
+
+    // Lấy tất cả
     List<MenuItem> getAllMenuItems();
+
+    // Lấy theo ID
     Optional<MenuItem> getMenuItemById(Integer id);
+
+    //  Xóa theo ID
     void deleteMenuItem(Integer id);
-    //  Tìm kiếm theo từ khóa (name/description), có sắp xếp theo giá
+
+    // Tìm kiếm + sắp xếp theo giá
     List<MenuItem> searchAndSortMenuItems(String keyword);
-    // Lấy các món ăn theo category (phân loại)
+
+    // Lọc theo phân loại món ăn
     List<MenuItem> getMenuItemsByCategory(String category);
-    // Kiểm tra tên món ăn có trùng không (dùng Set)
+
+    // Kiểm tra tên có trùng không
     boolean isNameUnique(String name);
+
+    // Trả về phản hồi cho client về tên món
     Map<String, Object> checkNameAvailability(String name);
 }

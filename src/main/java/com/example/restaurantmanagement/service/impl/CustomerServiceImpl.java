@@ -6,7 +6,9 @@ import com.example.restaurantmanagement.model.Customer;
 import com.example.restaurantmanagement.repository.AccountRepository;
 import com.example.restaurantmanagement.repository.CustomerRepository;
 import com.example.restaurantmanagement.service.CustomerService;
+import com.example.restaurantmanagement.service.FileStorageService;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -15,15 +17,18 @@ import java.util.Optional;
 public class CustomerServiceImpl implements CustomerService {
     private final CustomerRepository customerRepository;
     private final AccountRepository accountRepository;
+    private final FileStorageService fileStorageService;
 
     public CustomerServiceImpl(CustomerRepository customerRepository,
-                               AccountRepository accountRepository) {
+                               AccountRepository accountRepository,
+                               FileStorageService fileStorageService) {
         this.customerRepository = customerRepository;
         this.accountRepository = accountRepository;
+        this.fileStorageService = fileStorageService;
     }
 
     @Override
-    public Customer createCustomer(Customer customer) {
+    public Customer createCustomer(Customer customer, MultipartFile imageFile) {
         Integer accountId = customer.getAccountId();
 
         if (accountId == null) {
@@ -35,11 +40,16 @@ public class CustomerServiceImpl implements CustomerService {
             throw new NVException(ErrorCode.USER_NOT_FOUND, new Object[]{"Account ID = " + accountId});
         }
 
+        if (imageFile != null && !imageFile.isEmpty()) {
+            String imagePath = fileStorageService.saveFile(imageFile, "customer");
+            customer.setProfileImage(imagePath);
+        }
+
         return customerRepository.save(customer);
     }
 
     @Override
-    public Customer updateCustomer(Customer updatedCustomer) {
+    public Customer updateCustomer(Customer updatedCustomer, MultipartFile imageFile) {
         if (updatedCustomer.getId() == null) {
             throw new NVException(ErrorCode.INVALID_REQUEST, new Object[]{"Customer ID must not be null"});
         }
@@ -54,6 +64,11 @@ public class CustomerServiceImpl implements CustomerService {
         existing.setPhoneNumber(updatedCustomer.getPhoneNumber());
         existing.setEmail(updatedCustomer.getEmail());
         existing.setAddress(updatedCustomer.getAddress());
+
+        if (imageFile != null && !imageFile.isEmpty()) {
+            String imagePath = fileStorageService.saveFile(imageFile, "customer");
+            existing.setProfileImage(imagePath);
+        }
 
         return customerRepository.save(existing);
     }

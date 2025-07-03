@@ -8,6 +8,11 @@ import java.time.LocalDateTime;
 @Table(name = "orders")
 public class Order {
 
+    public enum OrderStatus {
+        NOT_PAID,
+        PAID,
+        CANCELLED
+    }
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -19,20 +24,23 @@ public class Order {
     @ManyToOne
     @JoinColumn(name = "table_id", nullable = false)
     private TableInfo table;
-
     @ManyToOne
     @JoinColumn(name = "staff_id", nullable = false)
     private Staff staff;
 
     private LocalDateTime orderTime;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status = "Not pay";
+    private OrderStatus status = OrderStatus.NOT_PAID;
+
     private BigDecimal total;
 
-    public Order() {}
+    public Order() {
+        this.orderTime = LocalDateTime.now();
+    }
 
-    // Getters and setters
+    // Getters and Setters
 
     public Integer getId() {
         return id;
@@ -74,11 +82,11 @@ public class Order {
         this.orderTime = orderTime;
     }
 
-    public String getStatus() {
+    public OrderStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(OrderStatus status) {
         this.status = status;
     }
 

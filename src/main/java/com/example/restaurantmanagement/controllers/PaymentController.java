@@ -21,7 +21,6 @@ public class PaymentController {
         this.paymentService = paymentService;
     }
 
-    // CREATE
     @PostMapping("/create")
     public ResponseEntity<ResponseObject> createPayment(@RequestBody Payment payment) {
         try {
@@ -39,6 +38,17 @@ public class PaymentController {
         return payment.map(value -> ResponseEntity.ok(new ResponseObject(value)))
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ResponseObject("NOT_FOUND", "Payment not found for Order ID: " + orderId)));
+    }
+    // UPDATE
+    @PutMapping("/update")
+    public ResponseEntity<ResponseObject> updatePayment(@RequestBody Payment updatedPayment) {
+        try {
+            Payment updated = paymentService.updatePayment(updatedPayment);
+            return ResponseEntity.ok(new ResponseObject(updated));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ResponseObject("UPDATE_FAILED", ex.getMessage()));
+        }
     }
 
     // READ ALL

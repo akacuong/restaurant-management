@@ -17,8 +17,12 @@ public class MenuItem {
     private String description;
 
     private String category;
+
+    private String image; //
+
     // Constructors
     public MenuItem() {}
+
     // Getters & Setters
     public Integer getId() {
         return id;
@@ -30,7 +34,6 @@ public class MenuItem {
     public String getName() {
         return name;
     }
-
     public void setName(String name) {
         this.name = name;
     }
@@ -38,7 +41,6 @@ public class MenuItem {
     public BigDecimal getPrice() {
         return price;
     }
-
     public void setPrice(BigDecimal price) {
         this.price = price;
     }
@@ -46,7 +48,6 @@ public class MenuItem {
     public String getDescription() {
         return description;
     }
-
     public void setDescription(String description) {
         this.description = description;
     }
@@ -54,8 +55,14 @@ public class MenuItem {
     public String getCategory() {
         return category;
     }
-
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public String getImage() {
+        return image;
+    }
+    public void setImage(String image) {
+        this.image = image;
     }
 }

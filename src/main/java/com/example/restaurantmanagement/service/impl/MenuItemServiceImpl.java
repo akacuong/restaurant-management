@@ -4,8 +4,11 @@ import com.example.restaurantmanagement.infrastructure.exception.ErrorCode;
 import com.example.restaurantmanagement.infrastructure.exception.NVException;
 import com.example.restaurantmanagement.model.MenuItem;
 import com.example.restaurantmanagement.repository.MenuItemRepository;
+import com.example.restaurantmanagement.service.FileStorageService;
 import com.example.restaurantmanagement.service.MenuItemService;
+
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -14,11 +17,12 @@ import java.util.stream.Collectors;
 public class MenuItemServiceImpl implements MenuItemService {
 
     private final MenuItemRepository menuItemRepository;
-
+    private final FileStorageService fileStorageService;
     private final Set<String> uniqueNames = new HashSet<>();
 
-    public MenuItemServiceImpl(MenuItemRepository menuItemRepository) {
+    public MenuItemServiceImpl(MenuItemRepository menuItemRepository, FileStorageService fileStorageService) {
         this.menuItemRepository = menuItemRepository;
+        this.fileStorageService = fileStorageService;
 
         List<MenuItem> existingItems = menuItemRepository.findAll();
         for (MenuItem item : existingItems) {
@@ -27,7 +31,7 @@ public class MenuItemServiceImpl implements MenuItemService {
     }
 
     @Override
-    public MenuItem createMenuItem(MenuItem item) {
+    public MenuItem createMenuItem(MenuItem item, MultipartFile imageFile) {
         if (item.getId() != null) {
             throw new NVException(ErrorCode.MENU_ITEM_ID_MUST_BE_NULL);
         }
@@ -36,12 +40,17 @@ public class MenuItemServiceImpl implements MenuItemService {
             throw new NVException(ErrorCode.MENU_ITEM_NAME_DUPLICATE, new Object[]{item.getName()});
         }
 
+        if (imageFile != null && !imageFile.isEmpty()) {
+            String savedPath = fileStorageService.saveFile(imageFile, "menu_items");
+            item.setImage(savedPath);
+        }
+
         uniqueNames.add(item.getName().toLowerCase());
         return menuItemRepository.save(item);
     }
 
     @Override
-    public MenuItem updateMenuItem(MenuItem updatedItem) {
+    public MenuItem updateMenuItem(MenuItem updatedItem, MultipartFile imageFile) {
         if (updatedItem.getId() == null) {
             throw new NVException(ErrorCode.MENU_ITEM_ID_REQUIRED);
         }
@@ -65,6 +74,11 @@ public class MenuItemServiceImpl implements MenuItemService {
         existing.setPrice(updatedItem.getPrice());
         existing.setCategory(updatedItem.getCategory());
         existing.setDescription(updatedItem.getDescription());
+
+        if (imageFile != null && !imageFile.isEmpty()) {
+            String savedPath = fileStorageService.saveFile(imageFile, "menu_items");
+            existing.setImage(savedPath);
+        }
 
         return menuItemRepository.save(existing);
     }
@@ -92,19 +106,17 @@ public class MenuItemServiceImpl implements MenuItemService {
 
     @Override
     public List<MenuItem> searchAndSortMenuItems(String keyword) {
-        List<MenuItem> allItems = menuItemRepository.findAll();
-        return allItems.stream()
+        return menuItemRepository.findAll().stream()
                 .filter(item -> item.getName().toLowerCase().contains(keyword.toLowerCase())
                         || item.getDescription().toLowerCase().contains(keyword.toLowerCase()))
-                .sorted(Comparator.comparing(MenuItem::getName))
-                .toList();
+                .sorted(Comparator.comparing(MenuItem::getPrice))
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<MenuItem> getMenuItemsByCategory(String category) {
         return menuItemRepository.findAll().stream()
-                .filter(item -> item.getCategory() != null &&
-                        item.getCategory().equalsIgnoreCase(category))
+                .filter(item -> item.getCategory() != null && item.getCategory().equalsIgnoreCase(category))
                 .collect(Collectors.toList());
     }
 

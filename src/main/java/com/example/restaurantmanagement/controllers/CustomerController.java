@@ -25,14 +25,27 @@ public class CustomerController {
         this.customerImageService = customerImageService;
     }
     @PostMapping("/create")
-    public ResponseEntity<ResponseObject> createCustomer(@RequestBody Customer customer) {
+    public ResponseEntity<ResponseObject> createCustomer(@RequestParam("accountId") Integer accountId,
+                                                         @RequestParam("name") String name,
+                                                         @RequestParam("phoneNumber") String phoneNumber,
+                                                         @RequestParam("email") String email,
+                                                         @RequestParam("address") String address,
+                                                         @RequestParam(value = "imageFile", required = false) MultipartFile imageFile) {
         try {
-            Customer createdCustomer = customerService.createCustomer(customer);
-            return ResponseEntity.ok(new ResponseObject(createdCustomer));
+            Customer customer = new Customer();
+            customer.setAccountId(accountId);
+            customer.setName(name);
+            customer.setPhoneNumber(phoneNumber);
+            customer.setEmail(email);
+            customer.setAddress(address);
+
+            Customer created = customerService.createCustomer(customer, imageFile);
+            return ResponseEntity.ok(new ResponseObject(created));
         } catch (RuntimeException ex) {
             return ResponseEntity.badRequest().body(new ResponseObject("CREATE_FAILED", ex.getMessage()));
         }
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<ResponseObject> getCustomer(@PathVariable Integer id) {
@@ -50,18 +63,28 @@ public class CustomerController {
     }
 
     // UPDATE
-    @PostMapping("/update/{id}")
-    public ResponseEntity<ResponseObject> updateCustomer(@PathVariable Integer id,
-                                                         @RequestBody Customer customer) {
+    @PostMapping("/update")
+    public ResponseEntity<ResponseObject> updateCustomer(@RequestParam Integer id,
+                                                         @RequestParam("name") String name,
+                                                         @RequestParam("phoneNumber") String phoneNumber,
+                                                         @RequestParam("email") String email,
+                                                         @RequestParam("address") String address,
+                                                         @RequestParam(value = "imageFile", required = false) MultipartFile imageFile) {
         try {
-            customer.setId(id); // Gán ID từ path vào object
-            Customer updatedCustomer = customerService.updateCustomer(customer);
-            return ResponseEntity.ok(new ResponseObject(updatedCustomer));
+            Customer customer = new Customer();
+            customer.setId(id);
+            customer.setName(name);
+            customer.setPhoneNumber(phoneNumber);
+            customer.setEmail(email);
+            customer.setAddress(address);
+
+            Customer updated = customerService.updateCustomer(customer, imageFile);
+            return ResponseEntity.ok(new ResponseObject(updated));
         } catch (RuntimeException ex) {
-            return ResponseEntity.badRequest()
-                    .body(new ResponseObject("UPDATE_FAILED", ex.getMessage()));
+            return ResponseEntity.badRequest().body(new ResponseObject("UPDATE_FAILED", ex.getMessage()));
         }
     }
+
 
     // DELETE
     @PostMapping("/delete")
