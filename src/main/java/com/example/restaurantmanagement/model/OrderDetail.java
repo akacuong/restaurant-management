@@ -15,10 +15,7 @@ public class OrderDetail {
     @ManyToOne
     @JoinColumn(name = "item_id", nullable = false)
     private MenuItem item;
-
     private Integer quantity;
-
-
     // Composite key class
     public static class OrderDetailId implements Serializable {
         private Integer order;

@@ -1,25 +1,26 @@
 package com.example.restaurantmanagement.controllers;
 
+import com.example.restaurantmanagement.infrastructure.dto.ReservationTimeStatDTO;
+import com.example.restaurantmanagement.infrastructure.exception.ErrorCode;
+import com.example.restaurantmanagement.infrastructure.exception.NVException;
 import com.example.restaurantmanagement.model.Reservation;
 import com.example.restaurantmanagement.response.ResponseObject;
 import com.example.restaurantmanagement.service.ReservationService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/reservations")
 public class ReservationController {
 
     private final ReservationService reservationService;
+
     public ReservationController(ReservationService reservationService) {
         this.reservationService = reservationService;
     }
@@ -27,66 +28,60 @@ public class ReservationController {
     // CREATE
     @PostMapping("/create")
     public ResponseEntity<ResponseObject> createReservation(@RequestBody Reservation reservation) {
-        try {
-            Reservation saved = reservationService.createReservation(reservation);
-            return ResponseEntity.ok(new ResponseObject(saved));
-        } catch (RuntimeException ex) {
-            return ResponseEntity.badRequest().body(new ResponseObject("CREATE_FAILED", ex.getMessage()));
+        if (reservation == null || reservation.getTableInfos() == null || reservation.getTableInfos().isEmpty()
+                || reservation.getStartTime() == null || reservation.getEndTime() == null) {
+            throw new NVException(ErrorCode.INVALID_REQUEST, new Object[]{"Missing table list or time"});
         }
+        Reservation saved = reservationService.createReservation(reservation);
+        return ResponseEntity.ok(new ResponseObject(saved));
     }
-
-    // READ ALL
+    // READ ALL WITH PAGINATION
     @GetMapping
     public ResponseEntity<ResponseObject> getAllReservations(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         Pageable pageable = PageRequest.of(page, size);
-        Page<Reservation> reservationPage = reservationService.getAllReservations(pageable);
-        return ResponseEntity.ok(new ResponseObject(reservationPage));
+        Page<Reservation> reservations = reservationService.getAllReservations(pageable);
+        return ResponseEntity.ok(new ResponseObject(reservations));
     }
-
     // READ BY ID
     @GetMapping("/{id}")
     public ResponseEntity<ResponseObject> getReservation(@PathVariable Integer id) {
-        Optional<Reservation> res = reservationService.getReservationById(id);
-        return res.map(r -> ResponseEntity.ok(new ResponseObject(r)))
-                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject("NOT_FOUND", "Reservation not found")));
+        Reservation reservation = reservationService.getReservationById(id)
+                .orElseThrow(() -> new NVException(ErrorCode.RESERVATION_NOT_FOUND));
+        return ResponseEntity.ok(new ResponseObject(reservation));
     }
 
     // UPDATE
-    @PostMapping("/update/{id}")
-    public ResponseEntity<ResponseObject> updateReservation(@PathVariable Integer id,
+    @PostMapping("/update")
+    public ResponseEntity<ResponseObject> updateReservation(@RequestBody Integer id,
                                                             @RequestBody Reservation updated) {
-        try {
-            updated.setId(id);
-            Reservation result = reservationService.updateReservation(updated);
-            return ResponseEntity.ok(new ResponseObject(result));
-        } catch (RuntimeException ex) {
-            return ResponseEntity.badRequest()
-                    .body(new ResponseObject("UPDATE_FAILED", ex.getMessage()));
+        if (updated == null) {
+            throw new NVException(ErrorCode.INVALID_REQUEST, new Object[]{"Missing reservation data"});
         }
+
+        updated.setId(id);
+        Reservation result = reservationService.updateReservation(updated);
+        return ResponseEntity.ok(new ResponseObject(result));
     }
 
     // DELETE
     @PostMapping("/delete")
     public ResponseEntity<ResponseObject> deleteReservation(@RequestBody Map<String, Integer> payload) {
         Integer id = payload.get("id");
-
         if (id == null) {
-            return ResponseEntity.badRequest()
-                    .body(new ResponseObject("INVALID_REQUEST", "Missing 'id' in request body"));
+            throw new NVException(ErrorCode.INVALID_REQUEST, new Object[]{"Missing reservation ID"});
         }
+        Reservation reservation = reservationService.getReservationById(id)
+                .orElseThrow(() -> new NVException(ErrorCode.RESERVATION_NOT_FOUND));
 
-        Optional<Reservation> existing = reservationService.getReservationById(id);
-        if (existing.isPresent()) {
-            reservationService.deleteReservation(id);
-            return ResponseEntity.ok(new ResponseObject("SUCCESS", "Reservation deleted successfully"));
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ResponseObject("NOT_FOUND", "Reservation not found"));
-        }
+        reservationService.deleteReservation(id);
+        return ResponseEntity.ok(new ResponseObject("SUCCESS", "Reservation deleted successfully"));
     }
-
+    @GetMapping("/stats/by-day-and-hour")
+    public ResponseEntity<ResponseObject> getReservationCountByDayAndHour() {
+        List<ReservationTimeStatDTO> stats = reservationService.countReservationsByDayAndHour();
+        return ResponseEntity.ok(new ResponseObject("SUCCESS", "Reservation count by day and hour", stats));
+    }
 }

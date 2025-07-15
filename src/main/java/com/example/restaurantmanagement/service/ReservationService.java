@@ -1,5 +1,6 @@
 package com.example.restaurantmanagement.service;
 
+import com.example.restaurantmanagement.infrastructure.dto.ReservationTimeStatDTO;
 import com.example.restaurantmanagement.model.Reservation;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,5 +15,6 @@ public interface ReservationService {
     Optional<Reservation> getReservationById(Integer id);
     Page<Reservation> getAllReservations(Pageable pageable);
     void deleteReservation(Integer id);
+    List<ReservationTimeStatDTO> countReservationsByDayAndHour();
 
 }

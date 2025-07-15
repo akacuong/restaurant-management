@@ -16,8 +16,9 @@ public class MenuItem {
 
     private String description;
 
-    private String category;
-
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private Category category;
     private String image; //
 
     // Constructors
@@ -52,10 +53,10 @@ public class MenuItem {
         this.description = description;
     }
 
-    public String getCategory() {
+    public Category getCategory() {
         return category;
     }
-    public void setCategory(String category) {
+    public void setCategory(Category category) {
         this.category = category;
     }
 

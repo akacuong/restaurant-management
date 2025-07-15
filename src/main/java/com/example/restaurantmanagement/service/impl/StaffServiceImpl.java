@@ -85,4 +85,23 @@ public class StaffServiceImpl implements StaffService {
         }
         staffRepository.deleteById(id);
     }
+    @Override
+    public List<Staff> searchStaff(String name, String phone, String address, String position) {
+        boolean isNameEmpty = (name == null || name.trim().isEmpty());
+        boolean isPhoneEmpty = (phone == null || phone.trim().isEmpty());
+        boolean isAddressEmpty = (address == null || address.trim().isEmpty());
+        boolean isPositionEmpty = (position == null || position.trim().isEmpty());
+
+        if (isNameEmpty && isPhoneEmpty && isAddressEmpty && isPositionEmpty) {
+            return staffRepository.findAll();
+        }
+
+        return staffRepository.searchStaff(
+                !isNameEmpty ? name.trim() : null,
+                !isPhoneEmpty ? phone.trim() : null,
+                !isAddressEmpty ? address.trim() : null,
+                !isPositionEmpty ? position.trim() : null
+        );
+    }
+
 }

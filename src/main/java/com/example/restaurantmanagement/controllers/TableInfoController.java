@@ -1,21 +1,18 @@
 package com.example.restaurantmanagement.controllers;
 
+import com.example.restaurantmanagement.infrastructure.exception.ErrorCode;
+import com.example.restaurantmanagement.infrastructure.exception.NVException;
 import com.example.restaurantmanagement.model.Reservation;
 import com.example.restaurantmanagement.model.TableInfo;
 import com.example.restaurantmanagement.response.ResponseObject;
 import com.example.restaurantmanagement.service.ReservationService;
 import com.example.restaurantmanagement.service.TableInfoService;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/tables")
@@ -28,98 +25,65 @@ public class TableInfoController {
         this.tableInfoService = tableInfoService;
         this.reservationService = reservationService;
     }
-
-    // CREATE
     @PostMapping("/create")
     public ResponseEntity<ResponseObject> createTable(@RequestBody TableInfo tableInfo) {
-        try {
-            if (tableInfo.getReservation() != null && tableInfo.getReservation().getId() != null) {
-                Integer resId = tableInfo.getReservation().getId();
-                Optional<Reservation> resOpt = reservationService.getReservationById(resId);
-                if (resOpt.isPresent()) {
-                    tableInfo.setReservation(resOpt.get());
-                } else {
-                    return ResponseEntity.badRequest()
-                            .body(new ResponseObject("CREATE_FAILED", "Reservation with ID " + resId + " not found"));
-                }
-            } else {
-                tableInfo.setReservation(null);
-            }
-
-            TableInfo created = tableInfoService.createTableInfo(tableInfo);
-            return ResponseEntity.ok(new ResponseObject(created));
-
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(new ResponseObject("CREATE_FAILED", e.getMessage()));
+        if (tableInfo.getReservation() != null && tableInfo.getReservation().getId() != null) {
+            Integer resId = tableInfo.getReservation().getId();
+            Reservation reservation = reservationService.getReservationById(resId)
+                    .orElseThrow(() -> new NVException(ErrorCode.RESERVATION_NOT_FOUND));
+            tableInfo.setReservation(reservation);
+        } else {
+            tableInfo.setReservation(null);
         }
+
+        TableInfo created = tableInfoService.createTableInfo(tableInfo);
+        return ResponseEntity.ok(new ResponseObject(created));
     }
 
-    // READ ALL
     @GetMapping
     public ResponseEntity<ResponseObject> getAllTables() {
-        List<TableInfo> tables = tableInfoService.getAllTableInfos();
-        return ResponseEntity.ok(new ResponseObject(tables));
+        return ResponseEntity.ok(new ResponseObject(tableInfoService.getAllTableInfos()));
     }
 
-    // READ BY ID
     @GetMapping("/{id}")
     public ResponseEntity<ResponseObject> getTable(@PathVariable Integer id) {
-        Optional<TableInfo> table = tableInfoService.getTableInfoById(id);
-        return table.map(value -> ResponseEntity.ok(new ResponseObject(value)))
-                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject("NOT_FOUND", "Table not found")));
+        TableInfo table = tableInfoService.getTableInfoById(id)
+                .orElseThrow(() -> new NVException(ErrorCode.TABLE_NOT_FOUND));
+        return ResponseEntity.ok(new ResponseObject(table));
     }
-
-    // UPDATE
-    @PostMapping("/update/{id}")
-    public ResponseEntity<ResponseObject> updateTable(@PathVariable Integer id,
+    @PostMapping("/update")
+    public ResponseEntity<ResponseObject> updateTable(@RequestBody Integer id,
                                                       @RequestBody TableInfo updated) {
-        Optional<TableInfo> tableOpt = tableInfoService.getTableInfoById(id);
-        if (tableOpt.isPresent()) {
-            TableInfo existing = tableOpt.get();
-            existing.setTableNumber(updated.getTableNumber());
-            existing.setCapacity(updated.getCapacity());
-            existing.setStatus(updated.getStatus());
+        TableInfo existing = tableInfoService.getTableInfoById(id)
+                .orElseThrow(() -> new NVException(ErrorCode.TABLE_NOT_FOUND));
 
-            if (updated.getReservation() != null && updated.getReservation().getId() != null) {
-                Optional<Reservation> resOpt = reservationService.getReservationById(updated.getReservation().getId());
-                if (resOpt.isPresent()) {
-                    existing.setReservation(resOpt.get());
-                } else {
-                    return ResponseEntity.badRequest()
-                            .body(new ResponseObject("UPDATE_FAILED", "Reservation not found"));
-                }
-            } else {
-                existing.setReservation(null);
-            }
+        existing.setTableNumber(updated.getTableNumber());
+        existing.setCapacity(updated.getCapacity());
+        existing.setStatus(updated.getStatus());
 
-            TableInfo updatedTable = tableInfoService.updateTableInfo(existing);
-            return ResponseEntity.ok(new ResponseObject(updatedTable));
+        if (updated.getReservation() != null && updated.getReservation().getId() != null) {
+            Reservation reservation = reservationService.getReservationById(updated.getReservation().getId())
+                    .orElseThrow(() -> new NVException(ErrorCode.RESERVATION_NOT_FOUND));
+            existing.setReservation(reservation);
+        } else {
+            existing.setReservation(null);
         }
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ResponseObject("NOT_FOUND", "Table not found with ID = " + id));
+        TableInfo updatedTable = tableInfoService.updateTableInfo(existing);
+        return ResponseEntity.ok(new ResponseObject(updatedTable));
     }
-
-    // DELETE
     @PostMapping("/delete")
     public ResponseEntity<ResponseObject> deleteTable(@RequestBody Map<String, Integer> payload) {
         Integer id = payload.get("id");
         if (id == null) {
-            return ResponseEntity.badRequest()
-                    .body(new ResponseObject("INVALID_REQUEST", "Missing 'id' in request body"));
+            throw new NVException(ErrorCode.INVALID_REQUEST);
         }
 
-        Optional<TableInfo> tableOpt = tableInfoService.getTableInfoById(id);
-        if (tableOpt.isPresent()) {
-            tableInfoService.deleteTableInfo(id);
-            return ResponseEntity.ok(new ResponseObject("SUCCESS", "Table deleted successfully"));
-        }
+        TableInfo table = tableInfoService.getTableInfoById(id)
+                .orElseThrow(() -> new NVException(ErrorCode.TABLE_NOT_FOUND));
 
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ResponseObject("NOT_FOUND", "Table not found with ID = " + id));
+        tableInfoService.deleteTableInfo(table.getId());
+        return ResponseEntity.ok(new ResponseObject("SUCCESS", "Table deleted successfully"));
     }
-    // Lấy bàn trống
     @GetMapping("/available")
     public ResponseEntity<ResponseObject> getAvailableTables() {
         List<TableInfo> availableTables = tableInfoService.getAvailableTables();
@@ -135,5 +99,4 @@ public class TableInfoController {
         List<List<TableInfo>> suggestions = tableInfoService.suggestTablesForReservation(numberOfPeople, startTime, endTime);
         return ResponseEntity.ok(new ResponseObject(suggestions));
     }
-
 }

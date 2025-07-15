@@ -2,7 +2,9 @@ package com.example.restaurantmanagement.service.impl;
 
 import com.example.restaurantmanagement.infrastructure.exception.ErrorCode;
 import com.example.restaurantmanagement.infrastructure.exception.NVException;
+import com.example.restaurantmanagement.model.Category;
 import com.example.restaurantmanagement.model.MenuItem;
+import com.example.restaurantmanagement.repository.CategoryRepository;
 import com.example.restaurantmanagement.repository.MenuItemRepository;
 import com.example.restaurantmanagement.service.FileStorageService;
 import com.example.restaurantmanagement.service.MenuItemService;
@@ -18,20 +20,22 @@ public class MenuItemServiceImpl implements MenuItemService {
 
     private final MenuItemRepository menuItemRepository;
     private final FileStorageService fileStorageService;
+    private final CategoryRepository categoryRepository;
+
     private final Set<String> uniqueNames = new HashSet<>();
 
-    public MenuItemServiceImpl(MenuItemRepository menuItemRepository, FileStorageService fileStorageService) {
+    public MenuItemServiceImpl(MenuItemRepository menuItemRepository,
+                               FileStorageService fileStorageService,
+                               CategoryRepository categoryRepository) {
         this.menuItemRepository = menuItemRepository;
         this.fileStorageService = fileStorageService;
+        this.categoryRepository = categoryRepository;
 
-        List<MenuItem> existingItems = menuItemRepository.findAll();
-        for (MenuItem item : existingItems) {
-            uniqueNames.add(item.getName().toLowerCase());
-        }
+        menuItemRepository.findAll().forEach(item -> uniqueNames.add(item.getName().toLowerCase()));
     }
 
     @Override
-    public MenuItem createMenuItem(MenuItem item, MultipartFile imageFile) {
+    public MenuItem createMenuItem(MenuItem item, MultipartFile imageFile, Integer categoryId) {
         if (item.getId() != null) {
             throw new NVException(ErrorCode.MENU_ITEM_ID_MUST_BE_NULL);
         }
@@ -40,27 +44,27 @@ public class MenuItemServiceImpl implements MenuItemService {
             throw new NVException(ErrorCode.MENU_ITEM_NAME_DUPLICATE, new Object[]{item.getName()});
         }
 
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new NVException(ErrorCode.CATEGORY_NOT_FOUND, new Object[]{categoryId}));
+
         if (imageFile != null && !imageFile.isEmpty()) {
             String savedPath = fileStorageService.saveFile(imageFile, "menu_items");
             item.setImage(savedPath);
         }
 
+        item.setCategory(category);
         uniqueNames.add(item.getName().toLowerCase());
         return menuItemRepository.save(item);
     }
 
     @Override
-    public MenuItem updateMenuItem(MenuItem updatedItem, MultipartFile imageFile) {
+    public MenuItem updateMenuItem(MenuItem updatedItem, MultipartFile imageFile, Integer categoryId) {
         if (updatedItem.getId() == null) {
             throw new NVException(ErrorCode.MENU_ITEM_ID_REQUIRED);
         }
 
-        Optional<MenuItem> existingOpt = menuItemRepository.findById(updatedItem.getId());
-        if (existingOpt.isEmpty()) {
-            throw new NVException(ErrorCode.MENU_ITEM_NOT_FOUND, new Object[]{updatedItem.getId()});
-        }
-
-        MenuItem existing = existingOpt.get();
+        MenuItem existing = menuItemRepository.findById(updatedItem.getId())
+                .orElseThrow(() -> new NVException(ErrorCode.MENU_ITEM_NOT_FOUND, new Object[]{updatedItem.getId()}));
 
         if (!existing.getName().equalsIgnoreCase(updatedItem.getName())) {
             uniqueNames.remove(existing.getName().toLowerCase());
@@ -70,10 +74,13 @@ public class MenuItemServiceImpl implements MenuItemService {
             uniqueNames.add(updatedItem.getName().toLowerCase());
         }
 
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new NVException(ErrorCode.CATEGORY_NOT_FOUND, new Object[]{categoryId}));
+
         existing.setName(updatedItem.getName());
         existing.setPrice(updatedItem.getPrice());
-        existing.setCategory(updatedItem.getCategory());
         existing.setDescription(updatedItem.getDescription());
+        existing.setCategory(category);
 
         if (imageFile != null && !imageFile.isEmpty()) {
             String savedPath = fileStorageService.saveFile(imageFile, "menu_items");
@@ -106,17 +113,18 @@ public class MenuItemServiceImpl implements MenuItemService {
 
     @Override
     public List<MenuItem> searchAndSortMenuItems(String keyword) {
-        return menuItemRepository.findAll().stream()
-                .filter(item -> item.getName().toLowerCase().contains(keyword.toLowerCase())
-                        || item.getDescription().toLowerCase().contains(keyword.toLowerCase()))
-                .sorted(Comparator.comparing(MenuItem::getPrice))
-                .collect(Collectors.toList());
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return menuItemRepository.findAllByOrderByPriceAsc();
+        }
+
+        return menuItemRepository.searchByKeywordSorted(keyword.trim());
     }
 
+
     @Override
-    public List<MenuItem> getMenuItemsByCategory(String category) {
+    public List<MenuItem> getMenuItemsByCategory(Integer categoryId) {
         return menuItemRepository.findAll().stream()
-                .filter(item -> item.getCategory() != null && item.getCategory().equalsIgnoreCase(category))
+                .filter(item -> item.getCategory() != null && item.getCategory().getId().equals(categoryId))
                 .collect(Collectors.toList());
     }
 

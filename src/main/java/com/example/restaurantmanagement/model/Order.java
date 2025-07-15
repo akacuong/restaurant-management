@@ -7,12 +7,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "orders")
 public class Order {
-
-    public enum OrderStatus {
-        NOT_PAID,
-        PAID,
-        CANCELLED
-    }
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -96,5 +90,10 @@ public class Order {
 
     public void setTotal(BigDecimal total) {
         this.total = total;
+    }
+    public enum OrderStatus {
+        NOT_PAID,
+        PAID,
+        CANCELLED
     }
 }

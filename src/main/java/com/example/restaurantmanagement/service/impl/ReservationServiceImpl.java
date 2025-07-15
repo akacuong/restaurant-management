@@ -1,5 +1,6 @@
 package com.example.restaurantmanagement.service.impl;
 
+import com.example.restaurantmanagement.infrastructure.dto.ReservationTimeStatDTO;
 import com.example.restaurantmanagement.infrastructure.exception.ErrorCode;
 import com.example.restaurantmanagement.infrastructure.exception.NVException;
 import com.example.restaurantmanagement.model.Customer;
@@ -17,7 +18,9 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ReservationServiceImpl implements ReservationService {
@@ -100,6 +103,29 @@ public class ReservationServiceImpl implements ReservationService {
 
         return reservationRepository.save(existing);
     }
+    @Override
+    public List<ReservationTimeStatDTO> countReservationsByDayAndHour() {
+        List<Reservation> reservations = reservationRepository.findAll();
+
+        Map<String, Map<Integer, Long>> grouped = reservations.stream()
+                .collect(Collectors.groupingBy(
+                        r -> r.getStartTime().getDayOfWeek().toString(),
+                        Collectors.groupingBy(
+                                r -> r.getStartTime().getHour(),
+                                Collectors.counting()
+                        )
+                ));
+
+        List<ReservationTimeStatDTO> result = new ArrayList<>();
+
+        grouped.forEach((day, hourMap) -> {
+            hourMap.forEach((hour, count) -> {
+                result.add(new ReservationTimeStatDTO(day, hour, count));
+            });
+        });
+
+        return result;
+    }
 
     @Override
     public Optional<Reservation> getReservationById(Integer id) {
@@ -117,4 +143,5 @@ public class ReservationServiceImpl implements ReservationService {
         }
         reservationRepository.deleteById(id);
     }
+
 }

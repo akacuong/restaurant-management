@@ -13,7 +13,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
 @RestController
 @RequestMapping("/api/staff-shifts")
 public class StaffShiftController {
@@ -90,5 +89,14 @@ public class StaffShiftController {
             return ResponseEntity.badRequest().body(new ResponseObject("BAD_REQUEST", "Invalid request format"));
         }
     }
+    @GetMapping("/search")
+    public ResponseEntity<ResponseObject> searchShifts(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) StaffShift.Shift shift
+    ) {
+        List<StaffShift> results = staffShiftService.filterShiftsByShiftAndStaffName(name, shift);
+        return ResponseEntity.ok(new ResponseObject("SUCCESS", "Filtered shifts", results));
+    }
+
 
 }

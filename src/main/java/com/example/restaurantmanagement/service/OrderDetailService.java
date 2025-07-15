@@ -1,9 +1,11 @@
 package com.example.restaurantmanagement.service;
 
+import com.example.restaurantmanagement.infrastructure.dto.MenuItemStats;
 import com.example.restaurantmanagement.model.OrderDetail;
 import com.example.restaurantmanagement.model.OrderDetail.OrderDetailId;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface OrderDetailService {
@@ -16,4 +18,6 @@ public interface OrderDetailService {
     // READ ALL BY ORDER ID
     List<OrderDetail> getOrderDetailsByOrderId(Integer orderId);
     void deleteOrderDetail(OrderDetailId id);
+    Map<String, List<MenuItemStats>> getTopMenuItemsPerDayOfWeek(int topN);
+
 }

@@ -12,4 +12,6 @@ public interface StaffService {
     Optional<Staff> getStaffById(Integer id);
     List<Staff> getAllStaff();
     void deleteStaff(Integer id);
+    List<Staff> searchStaff(String name, String phone, String address, String position);
+
 }

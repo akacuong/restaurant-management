@@ -12,4 +12,5 @@ public interface CustomerService {
     Optional<Customer> getCustomerById(Integer id);
     List<Customer> getAllCustomers();
     void deleteCustomer(Integer id);
+    List<Customer> searchCustomers(String name, String province, String phone);
 }

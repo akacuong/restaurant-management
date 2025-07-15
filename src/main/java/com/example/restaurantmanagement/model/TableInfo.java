@@ -16,7 +16,6 @@ public class TableInfo {
 
     @Column(name = "table_number", nullable = false,unique = true)
     private String tableNumber;
-
     private Integer capacity;
 
     @Enumerated(EnumType.STRING)

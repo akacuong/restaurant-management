@@ -1,16 +1,15 @@
 package com.example.restaurantmanagement.controllers;
 
-import com.example.restaurantmanagement.model.*;
-import com.example.restaurantmanagement.repository.*;
+import com.example.restaurantmanagement.infrastructure.exception.ErrorCode;
+import com.example.restaurantmanagement.infrastructure.exception.NVException;
+import com.example.restaurantmanagement.model.Order;
 import com.example.restaurantmanagement.response.ResponseObject;
 import com.example.restaurantmanagement.service.OrderService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -24,54 +23,46 @@ public class OrderController {
     // CREATE
     @PostMapping("/create")
     public ResponseEntity<ResponseObject> createOrder(@RequestBody Order order) {
-        try {
-            Order created = orderService.createOrder(order);
-            return ResponseEntity.ok(new ResponseObject(created));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ResponseObject("CREATE_FAILED", e.getMessage()));
+        if (order == null) {
+            throw new NVException(ErrorCode.INVALID_REQUEST, new Object[]{"Order data is missing"});
         }
+        Order created = orderService.createOrder(order);
+        return ResponseEntity.ok(new ResponseObject(created));
     }
-
     // READ ALL
     @GetMapping
     public ResponseEntity<ResponseObject> getAllOrders() {
-        return ResponseEntity.ok(new ResponseObject(orderService.getAllOrders()));
+        List<Order> list = orderService.getAllOrders();
+        return ResponseEntity.ok(new ResponseObject(list));
     }
 
     // READ BY ID
     @GetMapping("/{id}")
     public ResponseEntity<ResponseObject> getOrderById(@PathVariable Integer id) {
-        return orderService.getOrderById(id)
-                .map(order -> ResponseEntity.ok(new ResponseObject(order)))
-                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject("NOT_FOUND", "Order not found")));
+        Order order = orderService.getOrderById(id)
+                .orElseThrow(() -> new NVException(ErrorCode.ORDER_NOT_FOUND));
+        return ResponseEntity.ok(new ResponseObject(order));
     }
 
     // UPDATE
-    @PostMapping("/update/{id}")
-    public ResponseEntity<ResponseObject> updateOrder(@PathVariable Integer id, @RequestBody Order order) {
-        try {
-            order.setId(id);
-            Order updated = orderService.updateOrder(order);
-            return ResponseEntity.ok(new ResponseObject(updated));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ResponseObject("UPDATE_FAILED", e.getMessage()));
+    @PostMapping("/update")
+    public ResponseEntity<ResponseObject> updateOrder(@RequestBody Integer id, @RequestBody Order order) {
+        if (order == null) {
+            throw new NVException(ErrorCode.INVALID_REQUEST, new Object[]{"Order data is missing"});
         }
+        order.setId(id);
+        Order updated = orderService.updateOrder(order);
+        return ResponseEntity.ok(new ResponseObject(updated));
     }
 
     // DELETE
     @PostMapping("/delete")
     public ResponseEntity<ResponseObject> deleteOrder(@RequestBody Map<String, Integer> payload) {
         Integer id = payload.get("id");
-
-        try {
-            orderService.deleteOrder(id);
-            return ResponseEntity.ok(new ResponseObject("SUCCESS", "Order deleted successfully"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ResponseObject("NOT_FOUND", e.getMessage()));
+        if (id == null) {
+            throw new NVException(ErrorCode.INVALID_REQUEST, new Object[]{"Missing order ID"});
         }
+        orderService.deleteOrder(id);
+        return ResponseEntity.ok(new ResponseObject("SUCCESS", "Order deleted successfully"));
     }
 }

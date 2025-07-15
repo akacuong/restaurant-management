@@ -24,11 +24,6 @@ public class Customer {
 
     private String address;
     private String profileImage;
-    @ElementCollection
-    @CollectionTable(name = "customer_gallery", joinColumns = @JoinColumn(name = "customer_id"))
-    @Column(name = "image_path")
-    private List<String> galleryImages = new ArrayList<>();
-
     public Customer() {}
 
     // Getters and Setters
@@ -87,11 +82,5 @@ public class Customer {
     public void setProfileImage(String profileImage) {
         this.profileImage = profileImage;
     }
-    public List<String> getGalleryImages() {
-        return galleryImages;
-    }
 
-    public void setGalleryImages(List<String> galleryImages) {
-        this.galleryImages = galleryImages;
-    }
 }

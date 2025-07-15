@@ -1,5 +1,6 @@
 package com.example.restaurantmanagement.service.impl;
 
+import com.example.restaurantmanagement.infrastructure.dto.MenuItemStats;
 import com.example.restaurantmanagement.infrastructure.exception.ErrorCode;
 import com.example.restaurantmanagement.infrastructure.exception.NVException;
 import com.example.restaurantmanagement.model.MenuItem;
@@ -13,8 +14,10 @@ import com.example.restaurantmanagement.service.OrderDetailService;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
+import java.time.DayOfWeek;
+import java.time.format.TextStyle;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderDetailServiceImpl implements OrderDetailService {
@@ -114,7 +117,7 @@ public class OrderDetailServiceImpl implements OrderDetailService {
         return orderDetailRepository.findByOrderOrderId(orderId);
     }
 
-    // ✅ Hàm tính lại tổng tiền đơn hàng
+    //  Hàm tính lại tổng tiền đơn hàng
     private void recalculateOrderTotal(Order order) {
         List<OrderDetail> details = orderDetailRepository.findByOrderOrderId(order.getId());
         BigDecimal total = BigDecimal.ZERO;
@@ -127,4 +130,37 @@ public class OrderDetailServiceImpl implements OrderDetailService {
         order.setTotal(total);
         orderRepository.save(order);
     }
+    @Override
+    public Map<String, List<MenuItemStats>> getTopMenuItemsPerDayOfWeek(int topN) {
+        List<OrderDetail> allDetails = orderDetailRepository.findAll();
+
+        Map<DayOfWeek, List<OrderDetail>> groupedByDay = allDetails.stream()
+                .filter(detail -> detail.getOrder() != null && detail.getOrder().getOrderTime() != null)
+                .collect(Collectors.groupingBy(
+                        detail -> detail.getOrder().getOrderTime().getDayOfWeek()
+                ));
+
+        Map<String, List<MenuItemStats>> result = new LinkedHashMap<>();
+
+        for (Map.Entry<DayOfWeek, List<OrderDetail>> entry : groupedByDay.entrySet()) {
+            Map<String, Integer> itemCount = entry.getValue().stream()
+                    .collect(Collectors.groupingBy(
+                            detail -> detail.getItem().getName(),
+                            Collectors.summingInt(OrderDetail::getQuantity)
+                    ));
+
+            List<MenuItemStats> topItems = itemCount.entrySet().stream()
+                    .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                    .limit(topN)
+                    .map(e -> new MenuItemStats(e.getKey(), e.getValue()))
+                    .collect(Collectors.toList());
+
+            String dayName = entry.getKey().getDisplayName(TextStyle.FULL, Locale.ENGLISH);
+            result.put(dayName, topItems);
+        }
+
+        return result;
+    }
+
+
 }

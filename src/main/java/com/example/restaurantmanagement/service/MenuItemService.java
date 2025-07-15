@@ -9,30 +9,32 @@ import java.util.Optional;
 
 public interface MenuItemService {
 
-    // Tạo mới có ảnh
-    MenuItem createMenuItem(MenuItem item, MultipartFile imageFile);
+    // Tạo mới món ăn có ảnh và categoryId
+    MenuItem createMenuItem(MenuItem item, MultipartFile imageFile, Integer categoryId);
 
-    // Cập nhật có ảnh
-    MenuItem updateMenuItem(MenuItem item, MultipartFile imageFile);
+    // Cập nhật món ăn có ảnh và categoryId
+    MenuItem updateMenuItem(MenuItem item, MultipartFile imageFile, Integer categoryId);
 
-    // Lấy tất cả
+    // Lấy tất cả menu item
     List<MenuItem> getAllMenuItems();
 
     // Lấy theo ID
     Optional<MenuItem> getMenuItemById(Integer id);
 
-    //  Xóa theo ID
+    // Xóa theo ID
     void deleteMenuItem(Integer id);
 
-    // Tìm kiếm + sắp xếp theo giá
+    // Tìm kiếm và sắp xếp
     List<MenuItem> searchAndSortMenuItems(String keyword);
 
-    // Lọc theo phân loại món ăn
-    List<MenuItem> getMenuItemsByCategory(String category);
+    // Lấy menu theo category ID
+    List<MenuItem> getMenuItemsByCategory(Integer categoryId);
 
     // Kiểm tra tên có trùng không
     boolean isNameUnique(String name);
 
     // Trả về phản hồi cho client về tên món
     Map<String, Object> checkNameAvailability(String name);
+    //Search by keyword
+
 }

@@ -2,7 +2,6 @@ package com.example.restaurantmanagement.controllers;
 
 import com.example.restaurantmanagement.model.Customer;
 import com.example.restaurantmanagement.response.ResponseObject;
-import com.example.restaurantmanagement.service.CustomerImageService;
 import com.example.restaurantmanagement.service.CustomerService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,11 +17,9 @@ import java.util.Optional;
 public class CustomerController {
 
     private final CustomerService customerService;
-    private final CustomerImageService customerImageService;
 
-    public CustomerController(CustomerService customerService, CustomerImageService customerImageService) {
+    public CustomerController(CustomerService customerService) {
         this.customerService = customerService;
-        this.customerImageService = customerImageService;
     }
     @PostMapping("/create")
     public ResponseEntity<ResponseObject> createCustomer(@RequestParam("accountId") Integer accountId,
@@ -100,41 +97,12 @@ public class CustomerController {
                     .body(new ResponseObject("NOT_FOUND", "Customer not found"));
         }
     }
-    // Upload 1 ảnh đại diện
-    @PostMapping("/{id}/upload-profile")
-    public ResponseEntity<ResponseObject> uploadProfile(@PathVariable Integer id,
-                                                        @RequestParam("file") MultipartFile file) {
-        try {
-            // Trả về tên file đã lưu trong DB
-            String fileName = customerImageService.uploadProfileImage(id, file);
-
-            // Ghép URL trả về cho frontend hiển thị ảnh
-            String imageUrl = "/uploads/customers/profile/" + fileName;
-
-            return ResponseEntity.ok(new ResponseObject("SUCCESS", "Profile image uploaded", imageUrl));
-        } catch (Exception ex) {
-            return ResponseEntity.badRequest()
-                    .body(new ResponseObject("UPLOAD_FAILED", ex.getMessage()));
-        }
+    @GetMapping("/search")
+    public List<Customer> searchCustomers(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String address,
+            @RequestParam(required = false) String phone
+    ) {
+        return customerService.searchCustomers(name, address, phone);
     }
-    // Upload nhiều ảnh gallery
-    @PostMapping("/{id}/upload-gallery")
-    public ResponseEntity<ResponseObject> uploadGallery(@PathVariable Integer id,
-                                                        @RequestParam("files") List<MultipartFile> files) {
-        try {
-            // Upload và chỉ nhận về danh sách tên file
-            List<String> fileNames = customerImageService.uploadGalleryImages(id, files);
-
-            // Ghép đường dẫn đầy đủ để frontend có thể hiển thị ảnh
-            List<String> urls = fileNames.stream()
-                    .map(name -> "/uploads/customers/gallery/" + name)  // dùng relative URL
-                    .toList();
-
-            return ResponseEntity.ok(new ResponseObject("SUCCESS", "Uploaded " + urls.size() + " images", urls));
-
-        } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(new ResponseObject("UPLOAD_FAILED", ex.getMessage()));
-        }
-    }
-
 }

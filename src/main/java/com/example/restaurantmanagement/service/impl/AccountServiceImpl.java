@@ -9,7 +9,9 @@ import com.example.restaurantmanagement.service.AccountService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import javax.management.relation.Role;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -27,8 +29,6 @@ public class AccountServiceImpl implements AccountService {
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenUtil = jwtTokenUtil;
     }
-
-    // Tạo tài khoản và mã hóa mật khẩu
     @Override
     public Account createAccount(Account account) {
         if (account.getUsername() == null || account.getUsername().trim().isEmpty()) {
@@ -55,7 +55,6 @@ public class AccountServiceImpl implements AccountService {
             throw new NVException(ErrorCode.INTERNAL_ERROR, e, new Object[]{"Failed to save account"});
         }
     }
-
     // So sánh mật khẩu đã mã hóa khi đăng nhập
     @Override
     public Map<String, Object> loginAndGenerateToken(String username, String password) {
@@ -97,5 +96,16 @@ public class AccountServiceImpl implements AccountService {
             throw new NVException(ErrorCode.USER_NOT_FOUND, new Object[]{id});
         }
         accountRepository.deleteById(id);
+    }
+
+    @Override
+    public List<Account> searchAccounts(String username, Role role) {
+        if ((username == null || username.isBlank()) && role == null) {
+            return accountRepository.findAll();
+        }
+        return accountRepository.searchAccounts(
+                (username != null && !username.isBlank()) ? username : null,
+                role
+        );
     }
 }

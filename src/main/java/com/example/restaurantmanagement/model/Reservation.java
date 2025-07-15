@@ -18,8 +18,7 @@ public class Reservation {
 
     @OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TableInfo> tableInfos = new ArrayList<>();
-
-    // ✅ Thêm startTime và endTime
+    // Thêm startTime và endTime
     @Column(name = "start_time", nullable = false)
     private LocalDateTime startTime;
 
@@ -34,7 +33,7 @@ public class Reservation {
 
     public Reservation() {}
 
-    // ✅ Getter/Setter cho startTime và endTime
+    // Getter/Setter cho startTime và endTime
     public LocalDateTime getStartTime() {
         return startTime;
     }

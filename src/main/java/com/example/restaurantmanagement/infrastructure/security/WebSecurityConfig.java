@@ -48,8 +48,14 @@ public class WebSecurityConfig {
                         .requestMatchers("/api/order-details/**").permitAll()
                         .requestMatchers("/api/payments/**").permitAll()
                         .requestMatchers("/api/staffs/**").permitAll()
+                        .requestMatchers("/api/feedbacks/**").permitAll()
+                        .requestMatchers(" /api/reservations/**").permitAll()
+                        .requestMatchers("/api/images/**").permitAll()
                         .requestMatchers("/api/menu-items/**").permitAll()
                         .requestMatchers("/api/customers/**").permitAll()
+                        .requestMatchers("/api/categories/**").permitAll()
+                        .requestMatchers("/api/products/**").permitAll()
+                        .requestMatchers("/api/product-transactions/**").permitAll()
                         .requestMatchers("/api/accounts/register/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/tables/**").hasRole("CUSTOMER")
                         .requestMatchers(HttpMethod.GET, "/api/menu-items/**").hasRole("CUSTOMER")
@@ -57,8 +63,6 @@ public class WebSecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/order-details/**").hasRole("CUSTOMER")
                         .requestMatchers(HttpMethod.GET, "/api/payments/**").hasRole("CUSTOMER")
                         .requestMatchers(HttpMethod.GET, "/api/reservations/**").hasRole("CUSTOMER")
-
-                        // STAFF được toàn quyền mọi method với các API này:
                         .requestMatchers("/api/tables/**").hasRole("STAFF")
                         .requestMatchers("/api/staffs/**").hasRole("STAFF")
                         .requestMatchers("/api/menu-items/**").hasRole("STAFF")
@@ -73,7 +77,6 @@ public class WebSecurityConfig {
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
-
     //  Provider để dùng PasswordEncoder + UserDetailsService
     @Bean
     public AuthenticationProvider authenticationProvider() {

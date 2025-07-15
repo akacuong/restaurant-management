@@ -90,4 +90,21 @@ public class CustomerServiceImpl implements CustomerService {
         }
         customerRepository.deleteById(id);
     }
+    @Override
+    public List<Customer> searchCustomers(String name, String address, String phone) {
+        boolean isNameEmpty = (name == null || name.trim().isEmpty());
+        boolean isAddressEmpty = (address == null || address.trim().isEmpty());
+        boolean isPhoneEmpty = (phone == null || phone.trim().isEmpty());
+
+        if (isNameEmpty && isAddressEmpty && isPhoneEmpty) {
+            return customerRepository.findAll();
+        }
+
+        return customerRepository.searchCustomers(
+                !isNameEmpty ? name.trim() : null,
+                !isAddressEmpty ? address.trim() : null,
+                !isPhoneEmpty ? phone.trim() : null
+        );
+    }
+
 }

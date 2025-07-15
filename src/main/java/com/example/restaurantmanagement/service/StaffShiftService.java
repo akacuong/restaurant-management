@@ -20,5 +20,6 @@ public interface StaffShiftService {
     void deleteShift(Integer id);
     Optional<StaffShift> getById(Integer id);
     ResponseObject removeShiftType(Integer staffShiftId, String shiftType);
+    List<StaffShift> filterShiftsByShiftAndStaffName(String nameKeyword, StaffShift.Shift shift);
 
 }

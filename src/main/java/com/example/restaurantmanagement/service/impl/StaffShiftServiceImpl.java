@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class StaffShiftServiceImpl implements StaffShiftService {
@@ -94,4 +95,10 @@ public class StaffShiftServiceImpl implements StaffShiftService {
             throw new NVException(ErrorCode.INVALID_SHIFT_TYPE, new Object[]{"Invalid shift type: " + shiftType});
         }
     }
+
+    @Override
+    public List<StaffShift> filterShiftsByShiftAndStaffName(String name, StaffShift.Shift shift) {
+        return staffShiftRepository.findByStaffNameAndShift(name, shift);
+    }
+
 }

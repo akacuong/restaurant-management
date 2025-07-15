@@ -1,5 +1,7 @@
 package com.example.restaurantmanagement.controllers;
 
+import com.example.restaurantmanagement.infrastructure.exception.ErrorCode;
+import com.example.restaurantmanagement.infrastructure.exception.NVException;
 import com.example.restaurantmanagement.model.Staff;
 import com.example.restaurantmanagement.repository.AccountRepository;
 import com.example.restaurantmanagement.response.ResponseObject;
@@ -37,29 +39,15 @@ public class StaffController {
             @RequestParam String dateOfBirth,
             @RequestParam(value = "image", required = false) MultipartFile image) {
 
-        try {
-            if (!accountRepository.existsById(accountId)) {
-                return ResponseEntity.badRequest()
-                        .body(new ResponseObject("NOT_FOUND", "Account not found with ID = " + accountId));
-            }
-
-            Staff staff = new Staff();
-            staff.setName(name);
-            staff.setPhone(phone);
-            staff.setPosition(position);
-            staff.setAddress(address);
-            staff.setAccountId(accountId);
-            staff.setDateOfBirth(LocalDate.parse(dateOfBirth));
-
-            Staff created = staffService.createStaff(staff, image);
-            return ResponseEntity.ok(new ResponseObject(created));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ResponseObject("CREATE_FAILED", e.getMessage()));
+        if (!accountRepository.existsById(accountId)) {
+            throw new NVException(ErrorCode.ACCOUNT_NOT_FOUND, new Object[]{accountId});
         }
-    }
 
-    // UPDATE (form-data)
+        Staff staff = buildStaffFromRequest(null, name, phone, position, address, accountId, dateOfBirth);
+        Staff created = staffService.createStaff(staff, image);
+        return ResponseEntity.ok(new ResponseObject(created));
+    }
+    // UPDATE
     @PostMapping("/update")
     public ResponseEntity<ResponseObject> updateStaff(
             @RequestParam Integer id,
@@ -71,53 +59,58 @@ public class StaffController {
             @RequestParam String dateOfBirth,
             @RequestParam(value = "image", required = false) MultipartFile image) {
 
-        try {
-            if (!accountRepository.existsById(accountId)) {
-                return ResponseEntity.badRequest()
-                        .body(new ResponseObject("NOT_FOUND", "Account not found with ID = " + accountId));
-            }
-            Staff staff = new Staff();
-            staff.setId(id);
-            staff.setName(name);
-            staff.setPhone(phone);
-            staff.setPosition(position);
-            staff.setAddress(address);
-            staff.setAccountId(accountId);
-            staff.setDateOfBirth(LocalDate.parse(dateOfBirth));
-            Staff updated = staffService.updateStaff(staff, image);
-            return ResponseEntity.ok(new ResponseObject(updated));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new ResponseObject("UPDATE_FAILED", e.getMessage()));
+        if (!accountRepository.existsById(accountId)) {
+            throw new NVException(ErrorCode.ACCOUNT_NOT_FOUND, new Object[]{accountId});
         }
+
+        Staff staff = buildStaffFromRequest(id, name, phone, position, address, accountId, dateOfBirth);
+        Staff updated = staffService.updateStaff(staff, image);
+        return ResponseEntity.ok(new ResponseObject(updated));
     }
 
     // GET BY ID
     @GetMapping("/{id}")
     public ResponseEntity<ResponseObject> getStaff(@PathVariable Integer id) {
-        Optional<Staff> staff = staffService.getStaffById(id);
-        return staff.map(value -> ResponseEntity.ok(new ResponseObject(value)))
-                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ResponseObject("NOT_FOUND", "Staff not found")));
+        Staff staff = staffService.getStaffById(id)
+                .orElseThrow(() -> new NVException(ErrorCode.STAFF_NOT_FOUND, new Object[]{id}));
+        return ResponseEntity.ok(new ResponseObject(staff));
     }
 
     // GET ALL
     @GetMapping
     public ResponseEntity<ResponseObject> getAllStaff() {
-        List<Staff> staffList = staffService.getAllStaff();
-        return ResponseEntity.ok(new ResponseObject(staffList));
+        return ResponseEntity.ok(new ResponseObject(staffService.getAllStaff()));
     }
 
     // DELETE
     @PostMapping("/delete")
     public ResponseEntity<ResponseObject> deleteStaff(@RequestParam Integer id) {
-        Optional<Staff> existing = staffService.getStaffById(id);
-        if (existing.isPresent()) {
-            staffService.deleteStaff(id);
-            return ResponseEntity.ok(new ResponseObject("SUCCESS", "Staff deleted successfully"));
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ResponseObject("NOT_FOUND", "Staff not found"));
-        }
+        Staff staff = staffService.getStaffById(id)
+                .orElseThrow(() -> new NVException(ErrorCode.STAFF_NOT_FOUND, new Object[]{id}));
+        staffService.deleteStaff(id);
+        return ResponseEntity.ok(new ResponseObject("SUCCESS", "Staff deleted successfully"));
     }
+    //  method để tái sử dụng
+    private Staff buildStaffFromRequest(Integer id, String name, String phone, String position,
+                                        String address, Integer accountId, String dateOfBirth) {
+        Staff staff = new Staff();
+        if (id != null) staff.setId(id);
+        staff.setName(name);
+        staff.setPhone(phone);
+        staff.setPosition(position);
+        staff.setAddress(address);
+        staff.setAccountId(accountId);
+        staff.setDateOfBirth(LocalDate.parse(dateOfBirth));
+        return staff;
+    }
+    @GetMapping("/search")
+    public ResponseEntity<List<Staff>> searchStaff(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String phone,
+            @RequestParam(required = false) String address,
+            @RequestParam(required = false) String position) {
+        List<Staff> result = staffService.searchStaff(name, phone, address, position);
+        return ResponseEntity.ok(result);
+    }
+
 }
